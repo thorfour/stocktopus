@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"golang.org/x/net/websocket"
 )
@@ -106,7 +107,8 @@ func (s *SlackRTMClient) Receive() (string, error) {
 		err = checkMsg()
 	}
 
-	return s.msg.Text, nil
+	text := strings.TrimLeft(s.msg.Text, fmt.Sprintf("<@%v>: ", s.id))
+	return text, nil
 }
 
 func (s *SlackRTMClient) Send(m string) error {
