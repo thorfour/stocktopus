@@ -17,7 +17,7 @@ const (
 )
 
 // Standard slack message format
-type message struct {
+type messageRx struct {
 	Type    string `json:"type"`
 	Channel string `json:"channel"`
 	User    string `json:"user"`
@@ -26,10 +26,20 @@ type message struct {
 	// TODO does not include edits or subtypes
 }
 
+// Standard slack message format
+type messageTx struct {
+	Id      uint64 `json:"id"`
+	Type    string `json:"type"`
+	Channel string `json:"channel"`
+	Text    string `json:"text"`
+}
+
 type SlackRTMClient struct {
-	ws  *websocket.Conn
-	id  string
-	msg message
+	ws           *websocket.Conn
+	id           string
+	msg          messageRx
+	send         messageTx
+	sendSequence uint64
 }
 
 func NewRTMClient(token string) (*SlackRTMClient, error) {
@@ -46,7 +56,7 @@ func NewRTMClient(token string) (*SlackRTMClient, error) {
 		return nil, err
 	}
 
-	return &SlackRTMClient{ws, id, message{}}, nil
+	return &SlackRTMClient{ws, id, messageRx{}, messageTx{}, 0}, nil
 }
 
 func rtmStart(tok string) (socket string, id string, err error) {
@@ -111,10 +121,15 @@ func (s *SlackRTMClient) Receive() (string, error) {
 	return text, nil
 }
 
+// Sends a response to the same channel as previous received message
 func (s *SlackRTMClient) Send(m string) error {
 
-	// TODO THOR
+	// Setup the send message
+	s.send.Channel = s.msg.Channel
+	s.sendSequence++
+	s.send.Id = s.sendSequence
+	s.send.Text = m
+	s.send.Type = messageType
 
-	//return websocket.JSON.Send(s, m)
-	return nil
+	return websocket.JSON.Send(s.ws, &s.send)
 }

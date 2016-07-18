@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/colinmc/slack"
+	"github.com/colinmc/stock"
 )
 
 func main() {
@@ -25,7 +26,15 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Println(msg)
-		//fmt.Println(stock.GetQuote(msg))
+
+		if len(msg) != 0 {
+			quote, err := stock.GetQuote(msg)
+			if err != nil {
+				continue
+			}
+
+			// Post the quote
+			slackBot.Send(quote)
+		}
 	}
 }

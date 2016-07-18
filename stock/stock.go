@@ -10,7 +10,7 @@ import (
 
 // Pulls a stock quote from google finance
 // Assumes the format is passed back in json
-func GetQuote(symbol string) string {
+func GetQuote(symbol string) (string, error) {
 
 	symbol = strings.ToUpper(symbol)
 
@@ -18,14 +18,14 @@ func GetQuote(symbol string) string {
 	url := fmt.Sprintf("http://finance.google.com/finance/info?client=ig&q=%v", symbol)
 	resp, err := http.Get(url)
 	if err != nil {
-		return fmt.Sprintf("Failed to get quote: %v", err)
+		return "", err
 	}
 
 	// Read the quote into the slice
 	defer resp.Body.Close()
 	jsonQuote, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Sprintf("Unable to read body: %v", err)
+		return "", err
 	}
 
 	// Google quotes start with '//' as the response
@@ -35,18 +35,18 @@ func GetQuote(symbol string) string {
 	var q interface{}
 	err = json.Unmarshal(jsonQuote, &q)
 	if err != nil {
-		return fmt.Sprintf("Unable to parse quote: %v, %v", err, string(jsonQuote))
+		return "", err
 	}
 
 	// Type assertion
 	quote, ok := q.(map[string]interface{})
 	if !ok {
-		return fmt.Sprintf("Quote was in unexpected format")
+		return "", fmt.Errorf(fmt.Sprintf("Quote was in unexpected format"))
 	}
 
 	// Pull the current price and the change
 	l_cur := quote["l_cur"]
 	c := quote["c"]
 
-	return fmt.Sprintf("%v Current Price: %v Todays Change: %v", symbol, l_cur, c)
+	return fmt.Sprintf("%v Current Price: %v Todays Change: %v", symbol, l_cur, c), nil
 }
