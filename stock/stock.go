@@ -14,7 +14,6 @@ func GetQuote(symbol string) (string, error) {
 
 	symbol = strings.ToUpper(symbol)
 
-	// Check for nasdaq first
 	url := fmt.Sprintf("http://finance.google.com/finance/info?client=ig&q=%v", symbol)
 	resp, err := http.Get(url)
 	if err != nil {

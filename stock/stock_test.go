@@ -7,10 +7,19 @@ import (
 
 func TestQuote(t *testing.T) {
 
-	resp := GetQuote("AMD")
+	resp, err := GetQuote("AMD")
+	if err != nil {
+		t.Fail()
+	}
 	fmt.Println(resp)
-	resp = GetQuote("TWLO")
+	resp, err = GetQuote("TWLO")
+	if err != nil {
+		t.Fail()
+	}
 	fmt.Println(resp)
-	resp = GetQuote("WDC")
+	resp, err = GetQuote("WDC")
+	if err != nil {
+		t.Fail()
+	}
 	fmt.Println(resp)
 }
