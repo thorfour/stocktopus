@@ -1,3 +1,5 @@
+//+build !AWS
+
 package main
 
 import (
