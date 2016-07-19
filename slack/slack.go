@@ -113,11 +113,12 @@ func (s *SlackRTMClient) Receive() (string, error) {
 	}
 
 	var err error
-	for err = checkMsg(); err == nil && s.msg.User != s.id && s.msg.Type != messageType; {
+	directMsg := fmt.Sprintf("<@%v>: ", s.id)
+	for err = checkMsg(); err != nil || !strings.HasPrefix(s.msg.Text, directMsg) || s.msg.Type != messageType; {
 		err = checkMsg()
 	}
 
-	text := strings.TrimLeft(s.msg.Text, fmt.Sprintf("<@%v>: ", s.id))
+	text := s.msg.Text[len(s.id)+5:]
 	return text, nil
 }
 
