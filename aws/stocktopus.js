@@ -1,16 +1,7 @@
-var cSpawn = require("child_process").spawn;
+var cp = require("child_process");
 
 exports.handler = function(event, context) {
 
-    var proc = cSpawn("./colinmc", [event.text.trim()]);
-    var quote = "";
-    proc.stdout.on("data", function(buf) {
-        quote += buf;
-    });
-
-    proc.on("close", function(code) {
-        if (code == 0) {
-            context.succeed(quote);
-        }
-    });
+    var proc = cp.spawnSync("./colinmc", [event.text], {encoding : "utf8"});
+    context.succeed(proc.stdout);
 };
