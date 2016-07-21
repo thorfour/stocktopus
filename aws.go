@@ -4,27 +4,29 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
+	"strings"
 
 	"github.com/colinmc/stock"
 )
 
 func main() {
 
-	// Expect
-	// text - command text
 	if len(os.Args) != 2 {
+		fmt.Println("Invalid arguments")
 		return
 	}
 
-	ticker := os.Args[1]
+	// Expected:  single arg with multiple tickers
+	tickers := strings.Split(os.Args[1], " ")
 
-	// Pull the stock quote
-	quote, err := stock.GetQuote(ticker)
-	if err != nil {
-		log.Fatal(err)
+	for _, ticker := range tickers {
+		// Pull the stock quote
+		quote, err := stock.GetQuote(ticker)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			return
+		}
+		fmt.Println(quote)
 	}
-
-	fmt.Print(quote)
 }

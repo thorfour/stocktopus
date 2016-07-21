@@ -47,5 +47,5 @@ func GetQuote(symbol string) (string, error) {
 	l_cur := quote["l_cur"]
 	c := quote["c"]
 
-	return fmt.Sprintf("*%v* Current Price: %v Todays Change: %v", symbol, l_cur, c), nil
+	return fmt.Sprintf("*%v*\tCurrent Price: %v\tTodays Change: %v", symbol, l_cur, c), nil
 }
