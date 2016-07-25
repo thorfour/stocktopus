@@ -46,3 +46,12 @@ func TestChartYahoo(t *testing.T) {
 	// Write resp to file
 	ioutil.WriteFile("chart.png", resp, 0644)
 }
+
+func TestChartCompareGoogle(t *testing.T) {
+
+	resp, err := GetChartLinkCompareGoogle("MSFT AAPL")
+	if err != nil {
+		t.Fail()
+	}
+	fmt.Println(resp)
+}

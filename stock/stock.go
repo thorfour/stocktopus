@@ -124,3 +124,12 @@ func GetChartLinkFinviz(symbol string) (string, error) {
 
 	return url, nil
 }
+
+func GetChartLinkCompareGoogle(symbols string) (string, error) {
+
+	// Replace spaces with commas for the chart url
+	symbols = strings.Replace(symbols, " ", ",", -1)
+	url := fmt.Sprintf("https://www.google.com/finance/chart?cht=c&q=%v&tlf=12h", symbols)
+
+	return url, nil
+}
