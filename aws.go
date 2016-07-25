@@ -20,7 +20,10 @@ func main() {
 	// Expected:  single arg with multiple tickers
 	tickers := strings.Split(os.Args[1], " ")
 
-	for _, ticker := range tickers {
+	if len(tickers) == 1 {
+
+		ticker := os.Args[1]
+
 		// Pull the stock quote
 		quote, err := stock.GetQuoteGoogle(ticker)
 		if err != nil {
@@ -38,5 +41,15 @@ func main() {
 			}
 			fmt.Println(chartUrl)
 		}
+
+	} else {
+
+		// Pull a comparison chart
+		chartUrl, err := stock.GetChartLinkCompareGoogle(os.Args[1])
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			return
+		}
+		fmt.Println(chartUrl)
 	}
 }
