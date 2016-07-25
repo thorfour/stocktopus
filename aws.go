@@ -31,7 +31,7 @@ func main() {
 
 		// Pull a stock chart if only 1 ticker was sent
 		if len(tickers) == 1 {
-			chartUrl, err := stock.GetChartLinkYahoo(ticker)
+			chartUrl, err := stock.GetChartLinkFinviz(ticker)
 			if err != nil {
 				fmt.Printf("Error: %v\n", err)
 				return
