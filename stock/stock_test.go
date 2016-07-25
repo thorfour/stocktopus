@@ -2,6 +2,7 @@ package stock
 
 import (
 	"fmt"
+	"io/ioutil"
 	"testing"
 )
 
@@ -32,4 +33,16 @@ func TestQuoteMOD(t *testing.T) {
 		t.Fail()
 	}
 	fmt.Println(resp)
+}
+
+func TestChartYahoo(t *testing.T) {
+
+	resp, err := GetChartYahoo("MSFT")
+	if err != nil {
+		fmt.Println(err)
+		t.Fail()
+	}
+
+	// Write resp to file
+	ioutil.WriteFile("chart.png", resp, 0644)
 }

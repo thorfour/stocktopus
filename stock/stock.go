@@ -51,7 +51,7 @@ func GetQuoteGoogle(symbol string) (string, error) {
 }
 
 // Pulls a stock quote from markit on demand
-// markitondeman.com
+// markitondemand.com
 func GetQuoteMOD(symbol string) (string, error) {
 
 	symbol = strings.ToUpper(symbol)
@@ -86,4 +86,25 @@ func GetQuoteMOD(symbol string) (string, error) {
 	c := quote["Change"]
 
 	return fmt.Sprintf("*%v*\tCurrent Price: %v\tTodays Change: %v", symbol, l_cur, c), nil
+}
+
+// Pulls a png stock image from yahoo finance
+func GetChartYahoo(symbol string) ([]byte, error) {
+
+	symbol = strings.ToUpper(symbol)
+
+	url := fmt.Sprintf("http://chart.finance.yahoo.com/z?s=%v&t=6m&q=l&l=on&z=s&p=m50,m200", symbol)
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+
+	// Read the quote into the slice
+	defer resp.Body.Close()
+	image, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return image, nil
 }
