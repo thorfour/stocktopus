@@ -108,3 +108,11 @@ func GetChartYahoo(symbol string) ([]byte, error) {
 
 	return image, nil
 }
+
+func GetChartLinkYahoo(symbol string) (string, error) {
+
+	symbol = strings.ToUpper(symbol)
+	url := fmt.Sprintf("http://chart.finance.yahoo.com/z?s=%v&t=6m&q=l&l=on&z=s&p=m50,m200", symbol)
+
+	return url, nil
+}
