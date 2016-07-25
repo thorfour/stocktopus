@@ -5,20 +5,30 @@ import (
 	"testing"
 )
 
-func TestQuote(t *testing.T) {
+func TestQuoteGoogle(t *testing.T) {
 
-	resp, err := GetQuote("AMD")
+	resp, err := GetQuoteGoogle("AMD")
 	if err != nil {
 		t.Fail()
 	}
 	fmt.Println(resp)
-	resp, err = GetQuote("TWLO")
+	resp, err = GetQuoteGoogle("TWLO")
 	if err != nil {
 		t.Fail()
 	}
 	fmt.Println(resp)
-	resp, err = GetQuote("WDC")
+	resp, err = GetQuoteGoogle("WDC")
 	if err != nil {
+		t.Fail()
+	}
+	fmt.Println(resp)
+}
+
+func TestQuoteMOD(t *testing.T) {
+
+	resp, err := GetQuoteMOD("AMD")
+	if err != nil {
+		fmt.Println(err)
 		t.Fail()
 	}
 	fmt.Println(resp)

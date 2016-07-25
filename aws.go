@@ -22,7 +22,7 @@ func main() {
 
 	for _, ticker := range tickers {
 		// Pull the stock quote
-		quote, err := stock.GetQuote(ticker)
+		quote, err := stock.GetQuoteGoogle(ticker)
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 			return

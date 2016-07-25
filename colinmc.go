@@ -30,7 +30,7 @@ func main() {
 		}
 
 		if len(msg) != 0 {
-			quote, err := stock.GetQuote(msg)
+			quote, err := stock.GetQuoteGoogle(msg)
 			if err != nil {
 				continue
 			}
