@@ -46,8 +46,9 @@ func GetQuoteGoogle(symbol string) (string, error) {
 	// Pull the current price and the change
 	l_cur := quote["l_cur"]
 	c := quote["c"]
+	cp := quote["cp"]
 
-	return fmt.Sprintf("*%v*\tCurrent Price: %v\tTodays Change: %v", symbol, l_cur, c), nil
+	return fmt.Sprintf("*%v*\tCurrent Price: %v\tTodays Change: %v(%v%%)", symbol, l_cur, c, cp), nil
 }
 
 // Pulls a stock quote from markit on demand
