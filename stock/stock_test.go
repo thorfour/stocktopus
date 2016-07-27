@@ -55,3 +55,12 @@ func TestChartCompareGoogle(t *testing.T) {
 	}
 	fmt.Println(resp)
 }
+
+func TestChartMOD(t *testing.T) {
+
+	resp, err := GetChartJsonMOD("AAPL")
+	if err != nil {
+		t.Fail()
+	}
+	fmt.Println(resp)
+}

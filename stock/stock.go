@@ -88,6 +88,69 @@ func GetQuoteMOD(symbol string) (string, error) {
 	return fmt.Sprintf("*%v*\tCurrent Price: %v\tTodays Change: %v", symbol, l_cur, c), nil
 }
 
+func GetChartJsonMOD(symbol string) (string, error) {
+
+	type data struct {
+		Min     float64   `json:"min"`
+		Max     float64   `json:"max"`
+		MaxDate string    `json:"maxDate"`
+		MinDate string    `json:"minDate"`
+		Value   []float64 `json:"values"`
+	}
+
+	type dataSeries struct {
+		Close data `json:"close"`
+	}
+
+	type element struct {
+		Currency   string     `json:"Currency"`
+		TimeStamp  string     `json:"TimeStamp"`
+		Symbol     string     `json:"Symbol"`
+		Type       string     `json:"Type"`
+		DataSeries dataSeries `json:"DataSeries"`
+	}
+
+	type MODChart struct {
+		Positions []float64 `json:"Positions"`
+		Dates     []string  `json:"Dates"`
+		Elements  []element `json:"Elements"`
+	}
+
+	fileName := "options.js"
+	symbol = strings.ToUpper(symbol)
+
+	params := fmt.Sprintf("{\"Normalized\":\"false\",\"DataPeriod\":\"Day\",\"NumberOfDays\":\"365\",\"Elements\":[{\"Symbol\":\"%v\",\"Type\":\"price\",\"Params\":[\"c\"]}]}", symbol)
+	url := fmt.Sprintf("http://dev.markitondemand.com/Api/v2/InteractiveChart/json?parameters=%v", params)
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+
+	// Read the quote into the slice
+	defer resp.Body.Close()
+	jsonChart, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	// Unmarshal into MODChart type
+	var chart MODChart
+	err = json.Unmarshal(jsonChart, &chart)
+	if err != nil {
+		return "", err
+	}
+
+	values := strings.Replace(fmt.Sprintf("%v", chart.Elements[0].DataSeries.Close.Value), " ", ",", -1)
+	chartJson := fmt.Sprintf("{ chart: { type: 'line' }, title: { text: '%v' }, series: [{ name: '%v', data: %v}]}", symbol, symbol, values)
+
+	err = ioutil.WriteFile(fileName, []byte(chartJson), 0644)
+	if err != nil {
+		return "", err
+	}
+
+	return fileName, nil
+}
+
 // Pulls a png stock image from yahoo finance
 func GetChartYahoo(symbol string) ([]byte, error) {
 
