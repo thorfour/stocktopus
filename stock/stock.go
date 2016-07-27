@@ -184,7 +184,7 @@ func GetChartLinkYahoo(symbol string) (string, error) {
 func GetChartLinkFinviz(symbol string) (string, error) {
 
 	symbol = strings.ToUpper(symbol)
-	url := fmt.Sprintf("http://finviz.com/chart.ashx?t=%v&ty=c&ta=1&p=d&s=m", symbol)
+	url := fmt.Sprintf("http://finviz.com/chart.ashx?t=%v&ty=c&ta=1&p=d&s=l", symbol)
 
 	return url, nil
 }
