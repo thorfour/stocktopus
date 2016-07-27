@@ -13,7 +13,7 @@ import (
 func main() {
 
 	if len(os.Args) != 2 {
-		fmt.Println("Invalid arguments")
+		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
 		return
 	}
 
@@ -27,7 +27,7 @@ func main() {
 		// Pull the stock quote
 		quote, err := stock.GetQuoteGoogle(ticker)
 		if err != nil {
-			fmt.Printf("Error: %v\n", err)
+			fmt.Fprintln(os.Stderr, "Error: ", err)
 			return
 		}
 		fmt.Println(quote)
@@ -36,7 +36,7 @@ func main() {
 		if len(tickers) == 1 {
 			chartUrl, err := stock.GetChartLinkFinviz(ticker)
 			if err != nil {
-				fmt.Printf("Error: %v\n", err)
+				fmt.Fprintln(os.Stderr, "Error: ", err)
 				return
 			}
 			fmt.Println(chartUrl)
@@ -47,7 +47,7 @@ func main() {
 		// Pull a comparison chart
 		chartUrl, err := stock.GetChartLinkCompareGoogle(os.Args[1])
 		if err != nil {
-			fmt.Printf("Error: %v\n", err)
+			fmt.Fprintln(os.Stderr, "Error: ", err)
 			return
 		}
 		fmt.Println(chartUrl)
