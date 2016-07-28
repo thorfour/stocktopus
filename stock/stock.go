@@ -15,6 +15,21 @@ func GetQuoteGoogle(symbol string) (string, error) {
 	symbol = strings.ToUpper(symbol)
 
 	url := fmt.Sprintf("http://finance.google.com/finance/info?client=ig&q=%v", symbol)
+
+	return parseGoogleFinanceResp(url)
+}
+
+func GetCurrencyGoogle(symbol string) (string, error) {
+
+	symbol = strings.ToUpper(symbol)
+
+	url := fmt.Sprintf("http://finance.google.com/finance/info?q=CURRENCY:%v", symbol)
+
+	return parseGoogleFinanceResp(url)
+}
+
+func parseGoogleFinanceResp(url string) (string, error) {
+
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", err
@@ -44,11 +59,12 @@ func GetQuoteGoogle(symbol string) (string, error) {
 	}
 
 	// Pull the current price and the change
+	t := quote["t"]
 	l_cur := quote["l_cur"]
 	c := quote["c"]
 	cp := quote["cp"]
 
-	return fmt.Sprintf("*%v*\tCurrent Price: %v\tTodays Change: %v(%v%%)", symbol, l_cur, c, cp), nil
+	return fmt.Sprintf("*%v*\tCurrent Price: %v\tTodays Change: %v(%v%%)", t, l_cur, c, cp), nil
 }
 
 // Pulls a stock quote from markit on demand
@@ -190,6 +206,8 @@ func GetChartLinkFinviz(symbol string) (string, error) {
 }
 
 func GetChartLinkCompareGoogle(symbols string) (string, error) {
+
+	symbols = strings.ToUpper(symbols)
 
 	// Replace spaces with commas for the chart url
 	symbols = strings.Replace(symbols, " ", ",", -1)

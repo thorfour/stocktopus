@@ -64,3 +64,13 @@ func TestChartMOD(t *testing.T) {
 	}
 	fmt.Println(resp)
 }
+
+func TestCurrencyGoogle(t *testing.T) {
+
+	resp, err := GetCurrencyGoogle("GBPUSD")
+	if err != nil {
+		fmt.Println(err)
+		t.Fail()
+	}
+	fmt.Println(resp)
+}
