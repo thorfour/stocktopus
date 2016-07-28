@@ -17,7 +17,7 @@ func TestSlack(t *testing.T) {
 		t.Skip()
 	}
 
-	_, _, err := Connect(*token)
+	_, err := NewRTMClient(*token)
 	if err != nil {
 		fmt.Printf("Failed to connect: %v\n", err)
 		t.Fail()
