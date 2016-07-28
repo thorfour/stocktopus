@@ -215,3 +215,11 @@ func GetChartLinkCompareGoogle(symbols string) (string, error) {
 
 	return url, nil
 }
+
+func GetChartLinkCurrencyFinviz(symbol string) (string, error) {
+
+	symbol = strings.ToUpper(symbol)
+	url := fmt.Sprintf("http://finviz.com/fx_image.ashx?%v_d1_l.png", symbol)
+
+	return url, nil
+}
