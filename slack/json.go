@@ -1,6 +1,6 @@
 package slack
 
-type postRequest struct {
+type PostRequest struct {
 	token        string `json:"token"`
 	team_id      string `json:"team_id"`
 	team_domain  string `json:"team_domain"`
