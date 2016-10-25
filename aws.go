@@ -5,7 +5,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/colinmc/stock"
 )
@@ -25,8 +24,8 @@ func main() {
 		return
 	}
 
-	// Expected:  single arg with multiple tickers
-	tickers := strings.Split(os.Args[1], " ")
+	// Expected:  single json string
+	// TODO THOR
 
 	switch tickers[0] {
 	case addToList: // Add ticker to a watch list
@@ -36,7 +35,11 @@ func main() {
 			return
 		}
 
-		// TODO add to watch list
+		// Chop off addToList arg
+		tickers = tickers[1:]
+
+		// TODO add to watch list need to also obtain username etc...
+		//aws.Watch(tickers)
 
 	case printList: // Print out all tickers in watch list
 
@@ -44,6 +47,9 @@ func main() {
 			fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
 			return
 		}
+
+		// Chop off printList arg
+		tickers = tickers[1:]
 
 		// TODO print watch list
 
