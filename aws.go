@@ -33,11 +33,6 @@ func main() {
 		return
 	}
 
-	fmt.Println("-------------------------")
-	fmt.Println(decodedMap["text"])
-	fmt.Println(decodedMap["user_name"])
-	fmt.Println("-------------------------")
-
 	text := decodedMap["text"]
 	text = strings.Split(text[0], " ")
 
