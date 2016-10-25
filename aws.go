@@ -11,8 +11,9 @@ import (
 )
 
 const (
-	addToList = "WATCH"
-	printList = "LIST"
+	addToList      = "WATCH"
+	printList      = "LIST"
+	removeFromList = "UNWATCH"
 )
 
 type stockFunc func(string) (string, error)
@@ -24,15 +25,33 @@ func main() {
 		return
 	}
 
-	switch os.Args[1] {
-	case addToList: // Add ticker to a watch list
-		// TODO add to watch list
-	case printList: // Print out all tickers in watch list
-		// TODO print watch list
-	default: // List of tickers to get information about right now
+	// Expected:  single arg with multiple tickers
+	tickers := strings.Split(os.Args[1], " ")
 
-		// Expected:  single arg with multiple tickers
-		tickers := strings.Split(os.Args[1], " ")
+	switch tickers[0] {
+	case addToList: // Add ticker to a watch list
+
+		if len(tickers) < 2 { // Must be something to add to watch list
+			fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
+			return
+		}
+
+		// TODO add to watch list
+
+	case printList: // Print out all tickers in watch list
+
+		if len(tickers) > 1 { // Requested more than just LIST
+			fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
+			return
+		}
+
+		// TODO print watch list
+
+	case removeFromList:
+
+		// TODO remove from watch list
+
+	default: // List of tickers to get information about right now
 
 		if len(tickers) == 1 {
 
