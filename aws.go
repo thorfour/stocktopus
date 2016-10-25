@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 
 	"github.com/colinmc/stock"
 )
@@ -38,6 +39,7 @@ func main() {
 	fmt.Println("-------------------------")
 
 	text := decodedMap["text"]
+	text = strings.Split(text[0], " ")
 
 	switch text[0] {
 	case addToList: // Add ticker to a watch list
