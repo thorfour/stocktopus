@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/colinmc/aws"
 	"github.com/colinmc/stock"
 )
 
@@ -34,7 +35,7 @@ func main() {
 	}
 
 	text := decodedMap["text"]
-	text = strings.Split(text[0], " ")
+	text = strings.Split(strings.ToUpper(text[0]), " ")
 
 	switch text[0] {
 	case addToList: // Add ticker to a watch list
@@ -47,8 +48,33 @@ func main() {
 		// Chop off addToList arg
 		text = text[1:]
 
-		// TODO add to watch list need to also obtain username etc...
-		//aws.Watch(text)
+		// User and token to be used as watch list lookup
+		user := decodedMap["user_id"]
+		token := decodedMap["token"]
+		key := fmt.Sprintf("%v%v", token, user)
+
+		err := aws.AddToList(key, text)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, fmt.Sprintf("Error addtolist: %v", err))
+			return
+		}
+
+	case removeFromList:
+
+		// Chop off printList arg
+		text = text[1:]
+
+		// User and token to be used as watch list lookup
+		user := decodedMap["user_id"]
+		token := decodedMap["token"]
+		key := fmt.Sprintf("%v%v", token, user)
+
+		// Remove from watch list
+		err := aws.RmFromList(key, text)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, fmt.Sprintf("Error addtolist: %v", err))
+			return
+		}
 
 	case printList: // Print out all tickers in watch list
 
@@ -57,14 +83,21 @@ func main() {
 			return
 		}
 
-		// Chop off printList arg
-		text = text[1:]
+		// User and token to be used as watch list lookup
+		user := decodedMap["user_id"]
+		token := decodedMap["token"]
+		key := fmt.Sprintf("%v%v", token, user)
 
-		// TODO print watch list
+		// Get and print watch list
+		list, err := aws.GetList(key)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, fmt.Sprintf("Error addtolist: %v", err))
+			return
+		}
 
-	case removeFromList:
-
-		// TODO remove from watch list
+		// Set the tickers to the list that was read. Fallthrough to normal printing
+		text = list
+		fallthrough
 
 	default: // List of tickers to get information about right now
 
