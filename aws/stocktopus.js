@@ -1,5 +1,5 @@
 var cp = require("child_process");
-var DEBUG = true
+var DEBUG = false
 
 exports.handler = function(event, context) {
 
@@ -23,6 +23,10 @@ exports.handler = function(event, context) {
         if (DEBUG) {
             console.log(proc.stderr)
         }
+    }
+
+    if (quote.toString() == "Added" || quote.toString() == "Removed") {
+        respType = "ephemeral";
     }
 
     // Parse quote into json for slack

@@ -33,19 +33,22 @@ func AddToList(key string, tickers []string) error {
 }
 
 func RmFromList(key string, tickers []string) error {
-	//--------
-	// FIXME
-	//--------
 
 	// check for object
-	_, _, err := getObject(key, nil)
-
-	if err == nil {
-		// if exists read modify wrie
-		// FIXME
+	obj, sess, err := getObject(key, nil)
+	if err == nil { // if exists read modify wrie
+		list := strings.Split(string(obj), " ")
+		for i := range list {
+			if list[i] == tickers[0] {
+				list = append(list[:i], list[i+1:]...) // Remove ticker from list
+				_, err := putObject(key, []byte(strings.Join(list, " ")), sess)
+				return err
+			}
+		}
 	}
 
-	return err
+	// Object didn't exist or ticker didn't exist
+	return nil
 }
 
 func GetList(key string) (string, error) {

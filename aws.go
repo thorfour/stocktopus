@@ -59,9 +59,14 @@ func main() {
 			return
 		}
 
-		fmt.Println("Done") // FIXME need a way to not respond on successful adds
+		fmt.Print("Added")
 
 	case removeFromList:
+
+		if len(text) != 2 { // Only allow removal of 1 item
+			fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
+			return
+		}
 
 		// Chop off printList arg
 		text = text[1:]
@@ -77,6 +82,8 @@ func main() {
 			fmt.Fprintln(os.Stderr, fmt.Sprintf("Error rmfromlist: %v", err))
 			return
 		}
+
+		fmt.Print("Removed")
 
 	case printList: // Print out all tickers in watch list
 
