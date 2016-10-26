@@ -22,6 +22,7 @@ func AddToList(key string, tickers []string) error {
 	if err != nil { // Doesn't exist
 		obj = []byte(strings.Join(tickers, " "))
 	} else { // Exists, add tickers to list
+		obj = append(obj, []byte(" ")...)
 		obj = append(obj, []byte(strings.Join(tickers, " "))...)
 	}
 
@@ -51,7 +52,7 @@ func GetList(key string) (string, error) {
 
 	obj, _, err := getObject(key, nil)
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 
 	return string(obj), nil
@@ -96,8 +97,8 @@ func getObject(name string, svc *s3.S3) ([]byte, *s3.S3, error) {
 
 	// Read the payload into slice
 	obj := make([]byte, *resp.ContentLength)
-	_, err = resp.Body.Read(obj)
-	return obj, svc, err
+	resp.Body.Read(obj)
+	return obj, svc, nil
 }
 
 func putObject(name string, data []byte, svc *s3.S3) (*s3.S3, error) {

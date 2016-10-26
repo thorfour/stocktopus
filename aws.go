@@ -93,7 +93,7 @@ func main() {
 		// Get and print watch list
 		list, err := aws.GetList(key)
 		if err != nil || len(list) == 0 {
-			fmt.Println("") // FIXME need a way to not respons on empty list
+			fmt.Fprintln(os.Stderr, "Error: No List")
 			return
 		}
 
