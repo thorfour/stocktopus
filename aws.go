@@ -59,6 +59,8 @@ func main() {
 			return
 		}
 
+		fmt.Println("Done") // FIXME need a way to not respond on successful adds
+
 	case removeFromList:
 
 		// Chop off printList arg
@@ -72,7 +74,7 @@ func main() {
 		// Remove from watch list
 		err := aws.RmFromList(key, text)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, fmt.Sprintf("Error addtolist: %v", err))
+			fmt.Fprintln(os.Stderr, fmt.Sprintf("Error rmfromlist: %v", err))
 			return
 		}
 
@@ -90,13 +92,13 @@ func main() {
 
 		// Get and print watch list
 		list, err := aws.GetList(key)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, fmt.Sprintf("Error addtolist: %v", err))
+		if err != nil || len(list) == 0 {
+			fmt.Println("") // FIXME need a way to not respons on empty list
 			return
 		}
 
 		// Set the tickers to the list that was read. Fallthrough to normal printing
-		text = list
+		text = strings.Split(list, " ")
 		fallthrough
 
 	default: // List of tickers to get information about right now
