@@ -22,7 +22,9 @@ func AddToList(key string, tickers []string) error {
 	if err != nil { // Doesn't exist
 		obj = []byte(strings.Join(tickers, " "))
 	} else { // Exists, add tickers to list
-		obj = append(obj, []byte(" ")...)
+		if len(obj) != 0 {
+			obj = append(obj, []byte(" ")...)
+		}
 		obj = append(obj, []byte(strings.Join(tickers, " "))...)
 	}
 
