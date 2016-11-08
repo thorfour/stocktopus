@@ -17,6 +17,13 @@ const (
 	printList      = "LIST"
 	removeFromList = "UNWATCH"
 	clear          = "CLEAR"
+	help           = "HELP"
+	helpStr        = `
+	*watch [tickers...]* add tickers to personal watch list
+	*list*               print out personal watch list
+	*unwatch [ticker]*   remove single ticker from watch list
+	*clear*              remove entire watch list
+	*[tickers...]*       pull stock quotes for list of tickers`
 )
 
 type stockFunc func(string) (string, error)
@@ -39,6 +46,10 @@ func main() {
 	text = strings.Split(strings.ToUpper(text[0]), " ")
 
 	switch text[0] {
+	case help: // print out a list of options
+
+		fmt.Fprintln(os.Stderr, helpStr)
+
 	case addToList: // Add ticker to a watch list
 
 		if len(text) < 2 { // Must be something to add to watch list
@@ -60,7 +71,7 @@ func main() {
 			return
 		}
 
-		fmt.Print("Added")
+		fmt.Fprintln(os.Stderr, "Added")
 
 	case removeFromList:
 
@@ -84,7 +95,7 @@ func main() {
 			return
 		}
 
-		fmt.Print("Removed")
+		fmt.Fprintln(os.Stderr, "Removed")
 
 	case clear: // Remove entire watch list
 
@@ -102,7 +113,7 @@ func main() {
 			fmt.Fprintln(os.Stderr, fmt.Sprintf("Error clear: %v", err))
 		}
 
-		fmt.Print("Removed")
+		fmt.Fprintln(os.Stderr, "Removed")
 
 	case printList: // Print out all tickers in watch list
 

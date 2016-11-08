@@ -17,16 +17,12 @@ exports.handler = function(event, context) {
     var respType = "in_channel";
     // Check for no response, means there was an error
     if (quote === "") {
-        quote = "This is not what you think it is";
+        quote = proc.stderr
         respType = "ephemeral";
 
         if (DEBUG) {
             console.log(proc.stderr)
         }
-    }
-
-    if (quote.toString() == "Added" || quote.toString() == "Removed") {
-        respType = "ephemeral";
     }
 
     // Parse quote into json for slack
