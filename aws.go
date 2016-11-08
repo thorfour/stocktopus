@@ -16,6 +16,7 @@ const (
 	addToList      = "WATCH"
 	printList      = "LIST"
 	removeFromList = "UNWATCH"
+	clear          = "CLEAR"
 )
 
 type stockFunc func(string) (string, error)
@@ -81,6 +82,24 @@ func main() {
 		if err != nil {
 			fmt.Fprintln(os.Stderr, fmt.Sprintf("Error rmfromlist: %v", err))
 			return
+		}
+
+		fmt.Print("Removed")
+
+	case clear: // Remove entire watch list
+
+		if len(text) > 1 {
+			fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
+			return
+		}
+
+		user := decodedMap["user_id"]
+		token := decodedMap["token"]
+		key := fmt.Sprintf("%v%v", token, user)
+
+		err := aws.Clear(key)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, fmt.Sprintf("Error clear: %v", err))
 		}
 
 		fmt.Print("Removed")

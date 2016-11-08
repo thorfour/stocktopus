@@ -14,6 +14,24 @@ const (
 	bucketName = "stocktopus"
 )
 
+// Delete the file entirely
+func Clear(key string) error {
+
+	svc, err := startSession()
+	if err != nil {
+		return err
+	}
+
+	params := &s3.DeleteObjectInput{
+		Bucket: aws.String(bucketName),
+		Key:    aws.String(key),
+	}
+
+	_, err = svc.DeleteObject(params)
+
+	return err
+}
+
 func AddToList(key string, tickers []string) error {
 
 	// Read existing object if exists
