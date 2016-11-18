@@ -26,6 +26,7 @@ const (
 	removeFromList = "UNWATCH"
 	clear          = "CLEAR"
 	help           = "HELP"
+	info           = "INFO"
 )
 
 var cmds map[string]cmdInfo
@@ -37,6 +38,7 @@ func init() {
 		printList:      cmdInfo{print, "*list*               print out personal watch list"},
 		removeFromList: cmdInfo{remove, "*unwatch [ticker]*   remove single ticker from watch list"},
 		clear:          cmdInfo{clearList, "*clear*              remove entire watch list"},
+		info:           cmdInfo{getInfo, "info [ticker] print a company profile"},
 		help:           cmdInfo{printHelp, "*[tickers...]*       pull stock quotes for list of tickers"},
 	}
 }
@@ -225,4 +227,24 @@ func getQuotes(text []string, decodedMap url.Values) {
 
 	// Dump the quote to stdio
 	fmt.Println(quote)
+}
+
+// Print out a company profile
+func getInfo(text []string, decodedMap url.Values) {
+
+	// Chop off arg
+	text = text[1:]
+
+	if len(text) > 1 {
+		fmt.Fprintln(os.Stderr, "Error: Too many arguments")
+		return
+	}
+
+	resp, err := stock.GetInfo(text[0])
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error: ", err)
+		return
+	}
+
+	fmt.Println(resp)
 }
