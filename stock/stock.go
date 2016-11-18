@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	"golang.org/x/net/html"
 )
 
 // Pulls a stock quote from google finance
@@ -222,4 +224,49 @@ func GetChartLinkCurrencyFinviz(symbol string) (string, error) {
 	url := fmt.Sprintf("http://finviz.com/fx_image.ashx?%v_d1_l.png", symbol)
 
 	return url, nil
+}
+
+func GetInfo(symbol string) (string, error) {
+
+	symbol = strings.ToUpper(symbol)
+	url := fmt.Sprintf("http://reuters.com/finance/stocks/companyProfile?symbol=%v", symbol)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+
+	tokenizer := html.NewTokenizer(resp.Body)
+	nextParagraph := false
+	for {
+		token := tokenizer.Next()
+		if token == html.ErrorToken {
+			break
+		}
+
+		if nextParagraph {
+			if token == html.StartTagToken {
+				tag, _ := tokenizer.TagName()
+				if string(tag) == "p" {
+					tokenizer.Next()
+					return string(tokenizer.Text()), nil
+				}
+			}
+
+		} else {
+			// Find <div id="companyNews">
+			// after that the following tag to look for is <p>
+			if token == html.StartTagToken {
+				tag, hasAttr := tokenizer.TagName()
+				if string(tag) == "div" && hasAttr {
+					key, val, _ := tokenizer.TagAttr()
+					if string(key) == "id" && string(val) == "companyNews" {
+						nextParagraph = true
+					}
+				}
+			}
+		}
+	}
+
+	return "", fmt.Errorf("Unable to find quote")
 }

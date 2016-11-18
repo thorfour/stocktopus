@@ -74,3 +74,13 @@ func TestCurrencyGoogle(t *testing.T) {
 	}
 	fmt.Println(resp)
 }
+
+func TestGetInfo(t *testing.T) {
+
+	resp, err := GetInfo("GOOG")
+	if err != nil {
+		fmt.Println(err)
+		t.Fail()
+	}
+	fmt.Println(resp)
+}
