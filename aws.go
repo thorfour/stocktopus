@@ -38,7 +38,7 @@ func init() {
 		printList:      cmdInfo{print, "*list*               print out personal watch list"},
 		removeFromList: cmdInfo{remove, "*unwatch [ticker]*   remove single ticker from watch list"},
 		clear:          cmdInfo{clearList, "*clear*              remove entire watch list"},
-		info:           cmdInfo{getInfo, "info [ticker] print a company profile"},
+		info:           cmdInfo{getInfo, "*info [ticker]* print a company profile"},
 		help:           cmdInfo{printHelp, "*[tickers...]*       pull stock quotes for list of tickers"},
 	}
 }
