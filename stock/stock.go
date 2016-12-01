@@ -263,7 +263,6 @@ func GetInfo(symbol string) (string, error) {
 				if string(key) == "class" && string(val) == "moduleBody" {
 					nextParagraph = true
 					moduleBody = false
-					fmt.Println("Found module body")
 				}
 			}
 		case nextParagraph:
