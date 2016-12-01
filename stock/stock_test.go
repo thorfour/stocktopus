@@ -77,10 +77,13 @@ func TestCurrencyGoogle(t *testing.T) {
 
 func TestGetInfo(t *testing.T) {
 
-	resp, err := GetInfo("GOOG")
-	if err != nil {
-		fmt.Println(err)
-		t.Fail()
+	tickers := []string{"GOOG", "ION", "COW"}
+	for _, ticker := range tickers {
+		resp, err := GetInfo(ticker)
+		if err != nil {
+			fmt.Println(err)
+			t.Fail()
+		}
+		fmt.Println(resp)
 	}
-	fmt.Println(resp)
 }

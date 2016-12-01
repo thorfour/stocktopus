@@ -238,31 +238,49 @@ func GetInfo(symbol string) (string, error) {
 
 	tokenizer := html.NewTokenizer(resp.Body)
 	nextParagraph := false
+	moduleBody := false
 	for {
 		token := tokenizer.Next()
 		if token == html.ErrorToken {
 			break
 		}
 
-		if nextParagraph {
-			if token == html.StartTagToken {
-				tag, _ := tokenizer.TagName()
-				if string(tag) == "p" {
-					tokenizer.Next()
-					return string(tokenizer.Text()), nil
+		if token != html.StartTagToken {
+			if nextParagraph {
+				text := string(tokenizer.Text())
+				if len(text) > 3 {
+					return text, nil
 				}
 			}
+			continue
+		}
 
-		} else {
+		switch {
+		case moduleBody:
+			tag, hasAttr := tokenizer.TagName()
+			if string(tag) == "div" && hasAttr {
+				key, val, _ := tokenizer.TagAttr()
+				if string(key) == "class" && string(val) == "moduleBody" {
+					nextParagraph = true
+					moduleBody = false
+					fmt.Println("Found module body")
+				}
+			}
+		case nextParagraph:
+			tag, _ := tokenizer.TagName()
+			switch string(tag) {
+			case "p":
+				tokenizer.Next()
+				return string(tokenizer.Text()), nil
+			}
+		default:
 			// Find <div id="companyNews">
-			// after that the following tag to look for is <p>
-			if token == html.StartTagToken {
-				tag, hasAttr := tokenizer.TagName()
-				if string(tag) == "div" && hasAttr {
-					key, val, _ := tokenizer.TagAttr()
-					if string(key) == "id" && string(val) == "companyNews" {
-						nextParagraph = true
-					}
+			// after that the following tag to look for is <div class="moduleBody">
+			tag, hasAttr := tokenizer.TagName()
+			if string(tag) == "div" && hasAttr {
+				key, val, _ := tokenizer.TagAttr()
+				if string(key) == "id" && string(val) == "companyNews" {
+					moduleBody = true
 				}
 			}
 		}
