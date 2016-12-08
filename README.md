@@ -20,6 +20,8 @@ The aws slash command will respond to slash commands. Single tickers will be a q
 > /stockbotname GOOGL
 
 
-> /stockbotname help 
+
 
 for a complete list of commands the bot supports.
+> /stockbotname help 
+
