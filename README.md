@@ -19,4 +19,5 @@ The RTM bot will look for any direct messages sent to it and try to pase them as
 The aws slash command will respond to slash commands. Single tickers will be a quote and inline graph. 
 > /stockbotname GOOGL
 
-> /stockbotname help for a complete list of commands the bot supports.
+> /stockbotname help 
+for a complete list of commands the bot supports.
