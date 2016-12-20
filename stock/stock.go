@@ -30,6 +30,61 @@ func GetCurrencyGoogle(symbol string) (string, error) {
 	return parseGoogleFinanceResp(url)
 }
 
+func GetCurrencyYahoo(symbol string) (string, error) {
+
+	type yahooRate struct {
+		Id   string `json:"id"`
+		Name string `json:"Name"`
+		Rate string `json:"Rate"`
+		Date string `json:"Date"`
+		Time string `json:"Time"`
+		Ask  string `json:"Ask"`
+		Bid  string `json:"Bid"`
+	}
+
+	type yahooResults struct {
+		Rate yahooRate `json:"rate"`
+	}
+
+	type yahooQuery struct {
+		Count   int          `json:"count"`
+		Created string       `json:"created"`
+		Lang    string       `json:"lang"`
+		Results yahooResults `json:"results"`
+	}
+
+	type yahooQuote struct {
+		Query yahooQuery `json:"query"`
+	}
+
+	symbol = strings.ToUpper(symbol)
+
+	url := fmt.Sprintf("https://query.yahooapis.com/v1/public/yql?q=select%%20*%%20from%%20yahoo.finance.xchange%%20where%%20pair%%20in%%20(%%22%v%%22)&format=json&env=store%%3A%%2F%%2Fdatatables.org%%2Falltableswithkeys", symbol)
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+	jsonQuote, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	var q yahooQuote
+	err = json.Unmarshal(jsonQuote, &q)
+	if err != nil {
+		return "", err
+	}
+
+	name := q.Query.Results.Rate.Name
+	rate := q.Query.Results.Rate.Rate
+	bid := q.Query.Results.Rate.Bid
+	ask := q.Query.Results.Rate.Ask
+
+	return fmt.Sprintf("*%v*\tCurrent Price: %v\tBid: %v\tAsk:%v", name, rate, bid, ask), nil
+}
+
 func parseGoogleFinanceResp(url string) (string, error) {
 
 	resp, err := http.Get(url)

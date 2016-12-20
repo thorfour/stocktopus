@@ -87,3 +87,15 @@ func TestGetInfo(t *testing.T) {
 		fmt.Println(resp)
 	}
 }
+
+func TestGetCurrencyYahoo(t *testing.T) {
+
+	ticker := "BTCUSD"
+	quote, err := GetCurrencyYahoo(ticker)
+	if err != nil {
+		fmt.Println(err)
+		t.Fail()
+	}
+
+	fmt.Println(quote)
+}
