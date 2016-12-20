@@ -190,7 +190,7 @@ func getQuotes(text []string, decodedMap url.Values) {
 		// Currently the longest stock ticker is 5 letters.
 		// If a ticker is 6 characters assume a currency request
 		if len(ticker) == 6 {
-			quoteFunc = stock.GetCurrencyGoogle
+			quoteFunc = stock.GetCurrencyYahoo
 		} else {
 			quoteFunc = stock.GetQuoteGoogle
 		}
