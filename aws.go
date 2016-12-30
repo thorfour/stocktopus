@@ -8,8 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/colinmc/aws"
-	"github.com/colinmc/stock"
+	"github.com/stocktopus/aws"
+	"github.com/stocktopus/stock"
 )
 
 type cmdFunc func([]string, url.Values)

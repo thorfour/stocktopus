@@ -7,13 +7,13 @@ import (
 	"log"
 	"os"
 
-	"github.com/colinmc/slack"
-	"github.com/colinmc/stock"
+	"github.com/stocktopus/slack"
+	"github.com/stocktopus/stock"
 )
 
 func main() {
 	if len(os.Args) != 2 {
-		fmt.Println(os.Stderr, "usage: colinmc: slack-bot-token\n")
+		fmt.Fprintln(os.Stderr, "usage: stocktopus: slack-bot-token")
 		return
 	}
 
