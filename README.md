@@ -1,4 +1,6 @@
-# colinmc
+[![Go Report Card](https://goreportcard.com/badge/github.com/thourfor/stocktopus)](https://goreportcard.com/report/github.com/thourfor/stocktopus)
+
+#stocktopus
 Simple slack bot that posts stock prices. It can be build as an RTM slack bot, or a slash command bot that loads into aws lambda
 
 ## Build
