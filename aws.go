@@ -34,12 +34,12 @@ var cmds map[string]cmdInfo
 // Mapping of command string to function
 func init() {
 	cmds = map[string]cmdInfo{
-		addToList:      cmdInfo{add, "*watch [tickers...]* add tickers to personal watch list"},
-		printList:      cmdInfo{print, "*list*               print out personal watch list"},
-		removeFromList: cmdInfo{remove, "*unwatch [ticker]*   remove single ticker from watch list"},
-		clear:          cmdInfo{clearList, "*clear*              remove entire watch list"},
-		info:           cmdInfo{getInfo, "*info [ticker]* print a company profile"},
-		help:           cmdInfo{printHelp, "*[tickers...]*       pull stock quotes for list of tickers"},
+		addToList:      {add, "*watch [tickers...]* add tickers to personal watch list"},
+		printList:      {print, "*list*               print out personal watch list"},
+		removeFromList: {remove, "*unwatch [ticker]*   remove single ticker from watch list"},
+		clear:          {clearList, "*clear*              remove entire watch list"},
+		info:           {getInfo, "*info [ticker]* print a company profile"},
+		help:           {printHelp, "*[tickers...]*       pull stock quotes for list of tickers"},
 	}
 }
 
