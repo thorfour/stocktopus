@@ -73,7 +73,7 @@ func RmFromList(key string, tickers []string) error {
 	return nil
 }
 
-// Returns a watchlist in a file
+// GetList Returns a watchlist in a file
 func GetList(key string) (string, error) {
 
 	obj, _, err := getObject(key, nil)

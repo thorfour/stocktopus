@@ -1,5 +1,6 @@
 package slack
 
+// PostRequest is json representation of slack post request
 type PostRequest struct {
 	token       string `json:"token"`
 	teamId      string `json:"team_id"`
