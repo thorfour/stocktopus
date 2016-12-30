@@ -34,6 +34,7 @@ type messageTx struct {
 	Text    string `json:"text"`
 }
 
+// SlackRTMClient is a real time messaging client for slack
 type SlackRTMClient struct {
 	ws           *websocket.Conn
 	id           string
@@ -42,6 +43,7 @@ type SlackRTMClient struct {
 	sendSequence uint64
 }
 
+// NewRTMClient returns a new real time messaging client for a given token
 func NewRTMClient(token string) (*SlackRTMClient, error) {
 
 	// Request an rtm session
@@ -102,7 +104,7 @@ func rtmStart(tok string) (socket string, id string, err error) {
 	return data.Url, data.Self.Id, nil
 }
 
-// Keep reciving data until a message for the requested id is obtained
+// Receive receives data until a message for the requested id is obtained
 func (s *SlackRTMClient) Receive() (string, error) {
 
 	checkMsg := func() error {
@@ -122,7 +124,7 @@ func (s *SlackRTMClient) Receive() (string, error) {
 	return text, nil
 }
 
-// Sends a response to the same channel as previous received message
+// Send a response to the same channel as previous received message
 func (s *SlackRTMClient) Send(m string) error {
 
 	// Setup the send message

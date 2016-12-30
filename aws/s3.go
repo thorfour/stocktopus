@@ -14,7 +14,7 @@ const (
 	bucketName = "stocktopus"
 )
 
-// Delete the file entirely
+// Clear Delete the file entirely
 func Clear(key string) error {
 
 	svc, err := startSession()
@@ -32,6 +32,7 @@ func Clear(key string) error {
 	return err
 }
 
+// AddToList adds an item to a watchlist file
 func AddToList(key string, tickers []string) error {
 
 	// Read existing object if exists
@@ -52,6 +53,7 @@ func AddToList(key string, tickers []string) error {
 	return err
 }
 
+// RmFromList removes an item from a watchlist file
 func RmFromList(key string, tickers []string) error {
 
 	// check for object
@@ -71,6 +73,7 @@ func RmFromList(key string, tickers []string) error {
 	return nil
 }
 
+// Returns a watchlist in a file
 func GetList(key string) (string, error) {
 
 	obj, _, err := getObject(key, nil)
@@ -81,7 +84,6 @@ func GetList(key string) (string, error) {
 	return string(obj), nil
 }
 
-// FIXME this should not use the hard coded access keys
 func startSession() (*s3.S3, error) {
 
 	sess, err := session.NewSession(&aws.Config{
@@ -152,7 +154,7 @@ func putObject(name string, data []byte, svc *s3.S3) (*s3.S3, error) {
 //-----------------------------------
 
 // List of all buckets
-func DebugListBuckets() (string, error) {
+func debugListBuckets() (string, error) {
 
 	svc, err := startSession()
 	if err != nil {

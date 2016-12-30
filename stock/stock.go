@@ -10,7 +10,7 @@ import (
 	"golang.org/x/net/html"
 )
 
-// Pulls a stock quote from google finance
+// GetQuoteGoogle Pulls a stock quote from google finance
 // Assumes the format is passed back in json
 func GetQuoteGoogle(symbol string) (string, error) {
 
@@ -21,6 +21,7 @@ func GetQuoteGoogle(symbol string) (string, error) {
 	return parseGoogleFinanceResp(url)
 }
 
+// GetCurrencyGoogle returns a currency quote from google finance
 func GetCurrencyGoogle(symbol string) (string, error) {
 
 	symbol = strings.ToUpper(symbol)
@@ -30,6 +31,7 @@ func GetCurrencyGoogle(symbol string) (string, error) {
 	return parseGoogleFinanceResp(url)
 }
 
+// GetCurrencyYahoo returns a currency quote from yahoo finance
 func GetCurrencyYahoo(symbol string) (string, error) {
 
 	type yahooRate struct {
@@ -117,14 +119,14 @@ func parseGoogleFinanceResp(url string) (string, error) {
 
 	// Pull the current price and the change
 	t := quote["t"]
-	l_cur := quote["l_cur"]
+	lCur := quote["l_cur"]
 	c := quote["c"]
 	cp := quote["cp"]
 
-	return fmt.Sprintf("*%v*\tCurrent Price: %v\tTodays Change: %v(%v%%)", t, l_cur, c, cp), nil
+	return fmt.Sprintf("*%v*\tCurrent Price: %v\tTodays Change: %v(%v%%)", t, lCur, c, cp), nil
 }
 
-// Pulls a stock quote from markit on demand
+// GetQuoteMOD Pulls a stock quote from markit on demand
 // markitondemand.com
 func GetQuoteMOD(symbol string) (string, error) {
 
@@ -156,12 +158,13 @@ func GetQuoteMOD(symbol string) (string, error) {
 	}
 
 	// Pull the current price and the change
-	l_cur := quote["LastPrice"]
+	lCur := quote["LastPrice"]
 	c := quote["Change"]
 
-	return fmt.Sprintf("*%v*\tCurrent Price: %v\tTodays Change: %v", symbol, l_cur, c), nil
+	return fmt.Sprintf("*%v*\tCurrent Price: %v\tTodays Change: %v", symbol, lCur, c), nil
 }
 
+// GetChartJsonMOD returns a chart link from market on demand
 func GetChartJsonMOD(symbol string) (string, error) {
 
 	type data struct {
@@ -225,7 +228,7 @@ func GetChartJsonMOD(symbol string) (string, error) {
 	return fileName, nil
 }
 
-// Pulls a png stock image from yahoo finance
+// GetChartYahoo Pulls a png stock image from yahoo finance
 func GetChartYahoo(symbol string) ([]byte, error) {
 
 	symbol = strings.ToUpper(symbol)
@@ -246,6 +249,7 @@ func GetChartYahoo(symbol string) ([]byte, error) {
 	return image, nil
 }
 
+// GetChartLinkYahoo returns a chart link from yahoo finance
 func GetChartLinkYahoo(symbol string) (string, error) {
 
 	symbol = strings.ToUpper(symbol)
@@ -254,6 +258,7 @@ func GetChartLinkYahoo(symbol string) (string, error) {
 	return url, nil
 }
 
+// GetChartLinkFinviz returns a chart link from finviz
 func GetChartLinkFinviz(symbol string) (string, error) {
 
 	symbol = strings.ToUpper(symbol)
@@ -262,6 +267,7 @@ func GetChartLinkFinviz(symbol string) (string, error) {
 	return url, nil
 }
 
+// GetChartLinkCompareGoogle returns a comparison chart link from google finance
 func GetChartLinkCompareGoogle(symbols string) (string, error) {
 
 	symbols = strings.ToUpper(symbols)
@@ -273,6 +279,7 @@ func GetChartLinkCompareGoogle(symbols string) (string, error) {
 	return url, nil
 }
 
+// GetChartLinkCurrencyFinviz returns a currenct chart link from finviz
 func GetChartLinkCurrencyFinviz(symbol string) (string, error) {
 
 	symbol = strings.ToUpper(symbol)
@@ -281,6 +288,7 @@ func GetChartLinkCurrencyFinviz(symbol string) (string, error) {
 	return url, nil
 }
 
+// GetInfo returns a company information paragrah from reuters
 func GetInfo(symbol string) (string, error) {
 
 	symbol = strings.ToUpper(symbol)
