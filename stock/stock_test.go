@@ -88,6 +88,19 @@ func TestGetInfo(t *testing.T) {
 	}
 }
 
+func TestGetBadInfo(t *testing.T) {
+
+	tickers := []string{"TLND"}
+	for _, ticker := range tickers {
+		resp, err := GetInfo(ticker)
+		if err != nil {
+			fmt.Println(err)
+			t.Fail()
+		}
+		fmt.Println(resp)
+	}
+}
+
 func TestGetCurrencyYahoo(t *testing.T) {
 
 	ticker := "BTCUSD"

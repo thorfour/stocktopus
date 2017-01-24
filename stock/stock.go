@@ -333,7 +333,11 @@ func GetInfo(symbol string) (string, error) {
 			switch string(tag) {
 			case "p":
 				tokenizer.Next()
-				return string(tokenizer.Text()), nil
+				t := string(tokenizer.Text())
+				if len(t) == 0 {
+					t = ":tumbleweed:"
+				}
+				return t, nil
 			}
 		default:
 			// Find <div id="companyNews">
