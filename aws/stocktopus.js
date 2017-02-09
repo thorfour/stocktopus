@@ -11,7 +11,7 @@ exports.handler = function(event, context) {
     }
 
     // Spawn the go routine to lookup stock quote
-    var proc = cp.spawnSync("./colinmc", [queryStr], {stdio: 'pipe', encoding: "utf8"});
+    var proc = cp.spawnSync("./gostock", [queryStr], {stdio: 'pipe', encoding: "utf8"});
     var quote = proc.stdout;
 
     var respType = "in_channel";

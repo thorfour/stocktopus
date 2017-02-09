@@ -3,9 +3,12 @@
 package main
 
 import (
+	"bytes"
+	"encoding/gob"
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/stocktopus/aws"
@@ -27,6 +30,14 @@ const (
 	clear          = "CLEAR"
 	help           = "HELP"
 	info           = "INFO"
+
+	// Play money commands
+	buy       = "BUY"
+	sell      = "SELL"
+	short     = "SHORT"
+	deposit   = "DEPOSIT"
+	portfolio = "PORTFOLIO"
+	reset     = "RESET"
 )
 
 var cmds map[string]cmdInfo
@@ -39,6 +50,11 @@ func init() {
 		removeFromList: {remove, "*unwatch [ticker]*   remove single ticker from watch list"},
 		clear:          {clearList, "*clear*              remove entire watch list"},
 		info:           {getInfo, "*info [ticker]* print a company profile"},
+		deposit:        {depositPlay, "*deposit [amount]* deposit amount of play money into account"},
+		reset:          {resetPlay, "*reset* resets account"},
+		portfolio:      {portfolioPlay, "*portfolio* Prints current portfolio of play money"},
+		buy:            {buyPlay, "*buy [ticker shares]* Purchases number of shares in a security with play money"},
+		sell:           {sellPlay, "*sell [ticker shares]* Sells number of shares of specified security"},
 		help:           {printHelp, "*[tickers...]*       pull stock quotes for list of tickers"},
 	}
 }
@@ -247,4 +263,268 @@ func getInfo(text []string, decodedMap url.Values) {
 	}
 
 	fmt.Println(resp)
+}
+
+//--------------------
+// Play money
+//--------------------
+
+// account is a users play money account information
+type account struct {
+	Balance  float64
+	Holdings map[string]Holding
+}
+
+type Holding struct {
+	Strike float64 // Strike price of the purchase
+	Shares uint64  // number of shares being held
+}
+
+func depositPlay(text []string, decodedMap url.Values) {
+
+	if len(text) != 2 { // Must have an amount to add
+		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
+		return
+	}
+
+	// Chop off deposit arg
+	text = text[1:]
+
+	// Parse amount to add to account
+	amt, err := strconv.ParseUint(text[0], 10, 64)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("Invalid amount: %v", err))
+		return
+	}
+
+	// User and token to be used as lookup
+	user := decodedMap["user_id"]
+	token := decodedMap["token"]
+	key := fmt.Sprintf("%v%v%v", "ACCT", token, user)
+
+	// Load the account
+	acct, err := loadAccount(key)
+	if err != nil {
+		// If no file exits then create a new account
+		newAcct := new(account)
+		newAcct.Holdings = make(map[string]Holding)
+		newAcct.Balance = float64(amt)
+		saveAccount(newAcct, key)
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("New Balance: %v", newAcct.Balance))
+		return
+	}
+
+	// Add amount to balance
+	acct.Balance += float64(amt)
+
+	err = saveAccount(acct, key)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("Unable to save account: %v", err))
+	}
+
+	// Respond with the new balance
+	resp := fmt.Sprintf("New Balance: %v", acct.Balance)
+	fmt.Fprintln(os.Stderr, resp)
+}
+
+func resetPlay(text []string, decodedMap url.Values) {
+
+	if len(text) != 1 { // Only reset accepted
+		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
+		return
+	}
+
+	// User and token to be used as lookup
+	user := decodedMap["user_id"]
+	token := decodedMap["token"]
+	key := fmt.Sprintf("%v%v%v", "ACCT", token, user)
+
+	newAcct := new(account)
+	newAcct.Holdings = make(map[string]Holding)
+	newAcct.Balance = float64(0)
+	saveAccount(newAcct, key)
+	fmt.Fprintln(os.Stderr, fmt.Sprintf("New Balance: %v", newAcct.Balance))
+}
+
+func portfolioPlay(text []string, decodedMap url.Values) {
+
+	if len(text) != 1 { // Only portfolio accepted
+		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
+		return
+	}
+
+	// User and token to be used as lookup
+	user := decodedMap["user_id"]
+	token := decodedMap["token"]
+	key := fmt.Sprintf("%v%v%v", "ACCT", token, user)
+
+	acct, err := loadAccount(key)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Unable to load account")
+		return
+	}
+
+	s := fmt.Sprintf("Balance: $%v", acct.Balance)
+	for k, v := range acct.Holdings {
+		s = fmt.Sprintf("%v\n%v : %v @ $%v", s, k, v.Shares, v.Strike)
+	}
+
+	fmt.Print(s)
+}
+
+func buyPlay(text []string, decodedMap url.Values) {
+
+	if len(text) != 3 { // BUY TICKER SHARES
+		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
+		return
+	}
+
+	// Chop off buy arg
+	text = text[1:]
+
+	// Parse number of shares to purchase
+	amt, err := strconv.ParseUint(text[1], 10, 64)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("Invalid amount: %v", err))
+		return
+	}
+
+	// lookup ticker price
+	ticker := text[0]
+	price, err := stock.GetPriceGoogle(ticker)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("Unable to get price: %v", err))
+		return
+	}
+
+	// User and token to be used as lookup
+	user := decodedMap["user_id"]
+	token := decodedMap["token"]
+	key := fmt.Sprintf("%v%v%v", "ACCT", token, user)
+
+	acct, err := loadAccount(key)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Unable to load account")
+		return
+	}
+
+	// check if enough money in account
+	if acct.Balance < (price * float64(amt)) {
+		fmt.Fprintln(os.Stderr, "Insufficient funds")
+		return
+	}
+
+	// add to account
+	acct.Balance -= (price * float64(amt))
+	h, ok := acct.Holdings[ticker]
+	if !ok {
+		acct.Holdings[ticker] = Holding{price, amt}
+	} else {
+		newShares := h.Shares + amt
+		acct.Holdings[ticker] = Holding{price, newShares}
+	}
+
+	// write account
+	err = saveAccount(acct, key)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("Unable to save account: %v", err))
+		return
+	}
+
+	fmt.Fprintln(os.Stderr, "Done")
+}
+
+func sellPlay(text []string, decodedMap url.Values) {
+
+	if len(text) != 3 { // SELL TICKER SHARES
+		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
+		return
+	}
+
+	// Chop off buy arg
+	text = text[1:]
+
+	// Parse number of shares to purchase
+	amt, err := strconv.ParseUint(text[1], 10, 64)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("Invalid amount: %v", err))
+		return
+	}
+
+	// lookup ticker price
+	ticker := text[0]
+	price, err := stock.GetPriceGoogle(ticker)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("Unable to get price: %v", err))
+		return
+	}
+
+	// User and token to be used as lookup
+	user := decodedMap["user_id"]
+	token := decodedMap["token"]
+	key := fmt.Sprintf("%v%v%v", "ACCT", token, user)
+
+	acct, err := loadAccount(key)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Unable to load account")
+		return
+	}
+
+	h, ok := acct.Holdings[ticker]
+	if !ok || h.Shares < amt {
+		fmt.Fprintln(os.Stderr, "Not enough shares")
+		return
+	}
+
+	// remove from account and credit account for the sale
+	newShares := h.Shares - amt
+	if newShares == 0 {
+		delete(acct.Holdings, ticker)
+	} else {
+		acct.Holdings[ticker] = Holding{h.Strike, newShares}
+	}
+
+	acct.Balance += float64(amt) * price
+
+	// write account
+	err = saveAccount(acct, key)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("Unable to save account: %v", err))
+		return
+	}
+
+	fmt.Fprintln(os.Stderr, "Done")
+}
+
+func saveAccount(acct *account, key string) error {
+
+	// Encode account
+	var eb bytes.Buffer
+	e := gob.NewEncoder(&eb)
+	err := e.Encode(acct)
+	if err != nil {
+		return fmt.Errorf("Unable to encode account")
+	}
+
+	// Save the account to file
+	return aws.WriteFile(key, eb.Bytes())
+}
+
+func loadAccount(key string) (*account, error) {
+
+	f, err := aws.LoadFile(key)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to load account: %v", err)
+	}
+
+	// Unserialize acct from file
+	acct := new(account)
+	buf := bytes.NewBuffer(f)
+	d := gob.NewDecoder(buf)
+	err = d.Decode(acct)
+	if err != nil {
+		return nil, fmt.Errorf("Unable to decode account")
+	}
+
+	return acct, nil
 }

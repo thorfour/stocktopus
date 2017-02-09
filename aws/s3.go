@@ -149,6 +149,18 @@ func putObject(name string, data []byte, svc *s3.S3) (*s3.S3, error) {
 	return svc, err
 }
 
+// LoadFile returns a bytes slice representation of a file from s3 for the given key
+func LoadFile(key string) ([]byte, error) {
+	f, _, err := getObject(key, nil)
+	return f, err
+}
+
+// WriteFile saves a byte slice as a file with key
+func WriteFile(key string, f []byte) error {
+	_, err := putObject(key, f, nil)
+	return err
+}
+
 //-----------------------------------
 // DEBUG FUNCTIONS
 //-----------------------------------
