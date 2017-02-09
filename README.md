@@ -6,9 +6,9 @@
 Simple slack bot that posts stock prices. It can be build as an RTM slack bot, or a slash command bot that loads into aws lambda
 
 ## Build
-`go build`
+`go build -tags RTM`
 or for aws
-`go build -tags AWS`
+`go build`
 
 ## Run
 `./colinmc [slack-bot-token]`

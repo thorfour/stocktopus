@@ -1,4 +1,4 @@
-//+build !AWS
+//+build RTM
 
 package main
 
