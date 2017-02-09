@@ -335,7 +335,7 @@ func GetInfo(symbol string) (string, error) {
 				tokenizer.Next()
 				t := string(tokenizer.Text())
 				if len(t) == 0 {
-					t = ":tumbleweed:"
+					t = "There's nothing here :tumbleweed:"
 				}
 				return t, nil
 			}

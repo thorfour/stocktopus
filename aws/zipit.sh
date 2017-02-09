@@ -1,3 +1,3 @@
 #! /bin/bash
 rm stocktopus.zip
-zip stocktopus.zip stocktopus.js ../colinmc 
+zip stocktopus.zip stocktopus.js ../gostock
