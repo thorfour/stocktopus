@@ -364,7 +364,7 @@ func portfolioPlay(text []string, decodedMap url.Values) {
 		return
 	}
 
-	s := fmt.Sprintf("Balance: $%v", acct.Balance)
+	s := fmt.Sprintf("Balance: $%f", acct.Balance)
 	for k, v := range acct.Holdings {
 		s = fmt.Sprintf("%v\n%v : %v @ $%v", s, k, v.Shares, v.Strike)
 	}
