@@ -248,13 +248,13 @@ func getQuotes(text []string, decodedMap url.Values) {
 // Print out a company profile
 func getInfo(text []string, decodedMap url.Values) {
 
-	// Chop off arg
-	text = text[1:]
-
-	if len(text) > 1 {
-		fmt.Fprintln(os.Stderr, "Error: Too many arguments")
+	if len(text) != 2 {
+		fmt.Fprintln(os.Stderr, "Error: Invalid number of arguments")
 		return
 	}
+
+	// Chop off arg
+	text = text[1:]
 
 	resp, err := stock.GetInfo(text[0])
 	if err != nil {
