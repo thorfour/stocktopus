@@ -13,7 +13,7 @@ or for aws
 `go build`
 
 ## Run
-`./colinmc [slack-bot-token]`
+`./stocktopus [slack-bot-token]`
 or for aws
 `./aws/zipit.sh`
 and upload the stocktopus.zip to lambda
@@ -23,11 +23,11 @@ The RTM bot will look for any direct messages sent to it and try to pase them as
 > @stockbotname GOOGL
 
 The aws slash command will respond to slash commands. Single tickers will be a quote and inline graph. 
-> /stockbotname GOOGL
+> /stocktopus GOOGL
 
 
 
 
 for a complete list of commands the bot supports.
-> /stockbotname help 
+> /stocktopus help 
 
