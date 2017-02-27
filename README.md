@@ -1,6 +1,8 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/thourfor/stocktopus)](https://goreportcard.com/report/github.com/thourfor/stocktopus)
 [![WTFPL licensed](https://img.shields.io/badge/license-WTFPL-blue.svg)]
-(https://github.com/thourfor/stocktopus/blob/master/LICENSE) 
+(https://github.com/thourfor/stocktopus/blob/master/LICENSE)
+
+<a href="https://slack.com/oauth/authorize?scope=commands&client_id=15348769670.121517816146"><img alt="Add to Slack" height="40" width="139" src="https://platform.slack-edge.com/img/add_to_slack.png" srcset="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x" /></a>
 
 #stocktopus
 Simple slack bot that posts stock prices. It can be build as an RTM slack bot, or a slash command bot that loads into aws lambda
