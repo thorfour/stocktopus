@@ -31,3 +31,6 @@ The aws slash command will respond to slash commands. Single tickers will be a q
 for a complete list of commands the bot supports.
 > /stocktopus help 
 
+# Privacy Policy
+
+Stocktopus does not collect any personal identifying information. It does not store a history of your requests. The only data it does store is a unique ID received from Slack for a user if they opt to use the list or play money features. If you use the list or play money features it also stores the list of stocks a user has bought or added to their watch list. 
