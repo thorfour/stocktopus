@@ -10,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/stocktopus/aws"
 	"github.com/stocktopus/stock"
@@ -201,7 +202,12 @@ func getQuotes(text []string, decodedMap url.Values) {
 	var chartFunc stockFunc
 	var quote string
 
-	for _, ticker := range text {
+	// Accumulate all the quotes in the channel
+	quotes := make([]string, len(text))
+	wg := new(sync.WaitGroup)
+	wg.Add(len(text))
+
+	for i, ticker := range text {
 
 		// Currently the longest stock ticker is 5 letters.
 		// If a ticker is 6 characters assume a currency request
@@ -212,12 +218,19 @@ func getQuotes(text []string, decodedMap url.Values) {
 		}
 
 		// Pull the quote
-		q, err := quoteFunc(ticker)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "Error: ", err)
-			return
-		}
+		go func(t string, index int) {
+			q, err := quoteFunc(t)
+			if err == nil {
+				quotes[index] = q // Push the quote into the queue
+			}
+			wg.Done()
+		}(text[i], i)
+	}
 
+	// Wait for all the quotes to complete
+	wg.Wait()
+
+	for _, q := range quotes {
 		quote = fmt.Sprintf("%v%v\n", quote, q)
 	}
 
