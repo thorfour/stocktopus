@@ -6,7 +6,7 @@
 
 <img src="https://github.com/thourfor/stocktopus/blob/master/stocktopus_cropped.png" height="285" width="132"/>
 
-#stocktopus
+# stocktopus
 Simple Slack bot that posts stock prices. It can be build as an RTM Slack bot, or a slash command bot that loads into aws lambda
 
 ## Build
@@ -33,15 +33,15 @@ The aws slash command will respond to slash commands. Single tickers will be a q
 for a complete list of commands the bot supports.
 > /stocktopus help 
 
-# Privacy Policy
+## Privacy Policy
 
 Stocktopus does not collect any personal identifying information. It does not store a history of your requests. The only data it does store is a unique ID received from Slack for a user if they opt to use the list or play money features. If you use the list or play money features it also stores the list of stocks a user has bought or added to their watch list. 
 
-# Contact
+## Contact
 
 If you have questions comments or concerns about the app please email thorvald@protonmail.ch
 
-# Donations
+## Donations
 
 If you like the app and would like to donate to help us pay for server costs we accept Bitcoin `19RdnGfDfAcwaz8C4tLm7jaUk99mg4aDqx`
 
