@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/bndr/gotabulate"
 	"github.com/stocktopus/aws"
 	"github.com/stocktopus/stock"
 )
@@ -230,9 +231,18 @@ func getQuotes(text []string, decodedMap url.Values) {
 	// Wait for all the quotes to complete
 	wg.Wait()
 
-	for _, q := range quotes {
-		quote = fmt.Sprintf("%v%v\n", quote, q)
+	rows := make([][]string, len(quotes))
+	for i, q := range quotes {
+		info := strings.Fields(q)
+		rows[i] = []string{info[0], info[3], info[6]}
 	}
+
+	t := gotabulate.Create(rows)
+	t.SetHeaders([]string{"Ticker", "Current Price", "Todays Change"})
+	t.SetAlign("left")
+	t.SetHideLines([]string{"bottomLine", "betweenLine", "top"})
+	quote = t.Render("simple")
+	quote = fmt.Sprintf("```%v```", quote)
 
 	// Pull a chart if single stock requested
 	if len(text) == 1 {
