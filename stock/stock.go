@@ -131,7 +131,7 @@ func GetCurrencyYahoo(symbol string) (string, error) {
 	bid := q.Query.Results.Rate.Bid
 	ask := q.Query.Results.Rate.Ask
 
-	return fmt.Sprintf("*%v*\tCurrent Price: %v\tBid: %v\tAsk:%v", name, rate, bid, ask), nil
+	return fmt.Sprintf("%v\tCurrent Price: %v\tBid: %v\tAsk:%v", name, rate, bid, ask), nil
 }
 
 func parseGoogleFinanceResp(url string) (string, error) {
@@ -170,7 +170,7 @@ func parseGoogleFinanceResp(url string) (string, error) {
 	c := quote["c"]
 	cp := quote["cp"]
 
-	return fmt.Sprintf("*%v*\tCurrent Price: %v\tTodays Change: %v(%v%%)", t, lCur, c, cp), nil
+	return fmt.Sprintf("%v\tCurrent Price: %v\tTodays Change: %v(%v%%)", t, lCur, c, cp), nil
 }
 
 // GetQuoteMOD Pulls a stock quote from markit on demand
@@ -208,7 +208,7 @@ func GetQuoteMOD(symbol string) (string, error) {
 	lCur := quote["LastPrice"]
 	c := quote["Change"]
 
-	return fmt.Sprintf("*%v*\tCurrent Price: %v\tTodays Change: %v", symbol, lCur, c), nil
+	return fmt.Sprintf("%v\tCurrent Price: %v\tTodays Change: %v", symbol, lCur, c), nil
 }
 
 // GetChartJsonMOD returns a chart link from market on demand
