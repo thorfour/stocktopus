@@ -388,11 +388,24 @@ func portfolioPlay(text []string, decodedMap url.Values) {
 	}
 
 	s := fmt.Sprintf("Balance: $%0.2f", acct.Balance)
-	for k, v := range acct.Holdings {
-		s = fmt.Sprintf("%v\n%v : %v @ $%v", s, k, v.Shares, v.Strike)
-	}
+	if len(acct.Holdings) > 0 {
+		rows := make([][]interface{}, len(acct.Holdings))
+		i := 0
+		for k, v := range acct.Holdings {
+			rows[i] = []interface{}{k, v.Shares, v.Strike}
+			i++
+		}
 
-	fmt.Print(s)
+		t := gotabulate.Create(rows)
+		t.SetHeaders([]string{"Ticker", "Shares", "Strike"})
+		t.SetAlign("left")
+		t.SetHideLines([]string{"bottomLine", "betweenLine", "top"})
+		table := t.Render("simple")
+		resp := fmt.Sprintf("%v\n```%v```", s, table)
+		fmt.Print(resp)
+	} else {
+		fmt.Print(s)
+	}
 }
 
 func buyPlay(text []string, decodedMap url.Values) {
