@@ -261,7 +261,7 @@ func getQuotes(text []string, decodedMap url.Values) {
 		}
 
 		// Dump the chart link to stdio
-		quote = fmt.Sprintf("%v%v", quote, chartUrl)
+		quote = fmt.Sprintf("%v\n%v", quote, chartUrl)
 	}
 
 	// Dump the quote to stdio
