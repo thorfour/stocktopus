@@ -208,18 +208,18 @@ func getQuotes(text []string, decodedMap url.Values) {
 	wg := new(sync.WaitGroup)
 	wg.Add(len(text))
 
-	for i, ticker := range text {
-
-		// Currently the longest stock ticker is 5 letters.
-		// If a ticker is 6 characters assume a currency request
-		if len(ticker) == 6 {
-			quoteFunc = stock.GetCurrencyYahoo
-		} else {
-			quoteFunc = stock.GetQuoteGoogle
-		}
+	for i, _ := range text {
 
 		// Pull the quote
 		go func(t string, index int) {
+
+			// Currently the longest stock ticker is 5 letters.
+			// If a ticker is 6 characters assume a currency request
+			quoteFunc = stock.GetQuoteGoogle
+			if len(t) == 6 {
+				quoteFunc = stock.GetCurrencyYahoo
+			}
+
 			q, err := quoteFunc(t)
 			if err == nil {
 				quotes[index] = q // Push the quote into the queue
