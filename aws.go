@@ -231,11 +231,22 @@ func getQuotes(text []string, decodedMap url.Values) {
 	// Wait for all the quotes to complete
 	wg.Wait()
 
+	total := float64(0)
 	rows := make([][]string, len(quotes))
 	for i, q := range quotes {
 		info := strings.Fields(q)
+		s := strings.Split(info[6], "(")
+		if len(s) > 1 {
+			p, err := strconv.ParseFloat(strings.TrimRight(s[1], "%)"), 64)
+			if err == nil {
+				total += p
+			}
+		}
 		rows[i] = []string{info[0], info[3], info[6]}
 	}
+
+	// Add the cumulative total
+	rows = append(rows, []string{"Total", "--", fmt.Sprintf("%0.3f%%", total)})
 
 	t := gotabulate.Create(rows)
 	t.SetHeaders([]string{"Ticker", "Current Price", "Todays Change"})
