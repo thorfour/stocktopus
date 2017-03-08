@@ -246,7 +246,7 @@ func getQuotes(text []string, decodedMap url.Values) {
 	}
 
 	// Add the cumulative total
-	rows = append(rows, []string{"Total", "--", fmt.Sprintf("%0.3f%%", total)})
+	rows = append(rows, []string{"Avg.", "--", fmt.Sprintf("%0.3f%%", total/float64(len(rows)))})
 
 	t := gotabulate.Create(rows)
 	t.SetHeaders([]string{"Ticker", "Current Price", "Todays Change"})
