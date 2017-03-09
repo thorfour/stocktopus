@@ -232,17 +232,25 @@ func getQuotes(text []string, decodedMap url.Values) {
 	wg.Wait()
 
 	total := float64(0)
-	rows := make([][]string, len(quotes))
-	for i, q := range quotes {
+	rows := make([][]string, 0, len(quotes)+1)
+	for _, q := range quotes {
 		info := strings.Fields(q)
-		s := strings.Split(info[6], "(")
-		if len(s) > 1 {
-			p, err := strconv.ParseFloat(strings.TrimRight(s[1], "%)"), 64)
-			if err == nil {
-				total += p
+		if len(info) > 6 {
+			s := strings.Split(info[6], "(")
+			if len(s) > 1 {
+				p, err := strconv.ParseFloat(strings.TrimRight(s[1], "%)"), 64)
+				if err == nil {
+					total += p
+				}
 			}
+			rows = append(rows, []string{info[0], info[3], info[6]})
 		}
-		rows[i] = []string{info[0], info[3], info[6]}
+	}
+
+	// Nothing was returned
+	if len(rows) == 0 {
+		fmt.Fprintln(os.Stderr, "There's nothing here")
+		return
 	}
 
 	// Add the cumulative total
@@ -256,7 +264,7 @@ func getQuotes(text []string, decodedMap url.Values) {
 	quote = fmt.Sprintf("```%v```", quote)
 
 	// Pull a chart if single stock requested
-	if len(text) == 1 {
+	if len(rows) == 2 {
 
 		if len(text[0]) == 6 {
 			chartFunc = stock.GetChartLinkCurrencyFinviz
