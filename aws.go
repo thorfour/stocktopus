@@ -212,10 +212,12 @@ func getQuotes(text string, decodedMap url.Values) {
 	}
 
 	rows := make([][]interface{}, len(info))
+	cumsum := float64(0)
 	for i := range rows {
 		rows[i] = []interface{}{info[i].Ticker, info[i].Price, info[i].Change, info[i].ChangePercent}
+		cumsum += info[i].ChangePercent
 	}
-	//rows = append(rows, []string{"Avg.", "--", fmt.Sprintf("%0.3f%%", total/float64(len(rows)))})
+	rows = append(rows, []interface{}{"Avg.", "---", "---", fmt.Sprintf("%0.3f%%", cumsum/float64(len(rows)))})
 
 	t := gotabulate.Create(rows)
 	t.SetHeaders([]string{"Ticker", "Current Price", "Todays Change", "Percent Change"})
