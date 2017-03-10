@@ -10,7 +10,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/bndr/gotabulate"
 	"github.com/stocktopus/aws"
@@ -83,7 +82,7 @@ func main() {
 
 	cmd, ok := cmds[text[0]]
 	if !ok { // If there is no cmd mapped, assume it's a ticker and get quotes
-		getQuotes(text, decodedMap)
+		getQuotes(decodedMap["text"][0], decodedMap)
 	} else {
 		cmd.funcPtr(text, decodedMap)
 	}
@@ -134,10 +133,7 @@ func print(text []string, decodedMap url.Values) {
 		return
 	}
 
-	// Set the tickers to the list that was read. Fallthrough to normal printing
-	text = strings.Split(list, " ")
-
-	getQuotes(text, decodedMap)
+	getQuotes(decodedMap["text"][0], decodedMap)
 }
 
 // Remove a single ticker from a watch list
@@ -198,82 +194,47 @@ func printHelp(text []string, decodedMap url.Values) {
 }
 
 // Default functionality of grabbing stock quote(s)
-func getQuotes(text []string, decodedMap url.Values) {
-	var quoteFunc stockFunc
+func getQuotes(text string, decodedMap url.Values) {
 	var chartFunc stockFunc
 	var quote string
 
-	// Accumulate all the quotes in the channel
-	quotes := make([]string, len(text))
-	wg := new(sync.WaitGroup)
-	wg.Add(len(text))
-
-	for i, _ := range text {
-
-		// Pull the quote
-		go func(t string, index int) {
-
-			// Currently the longest stock ticker is 5 letters.
-			// If a ticker is 6 characters assume a currency request
-			quoteFunc = stock.GetQuoteGoogle
-			if len(t) == 6 {
-				quoteFunc = stock.GetCurrencyYahoo
-			}
-
-			q, err := quoteFunc(t)
-			if err == nil {
-				quotes[index] = q // Push the quote into the queue
-			}
-			wg.Done()
-		}(text[i], i)
-	}
-
-	// Wait for all the quotes to complete
-	wg.Wait()
-
-	total := float64(0)
-	rows := make([][]string, 0, len(quotes)+1)
-	for _, q := range quotes {
-		info := strings.Fields(q)
-		if len(info) > 6 {
-			s := strings.Split(info[6], "(")
-			if len(s) > 1 {
-				p, err := strconv.ParseFloat(strings.TrimRight(s[1], "%)"), 64)
-				if err == nil {
-					total += p
-				}
-			}
-			rows = append(rows, []string{info[0], info[3], info[6]})
-		}
+	// Pull the quote
+	info, err := stock.GetPriceGoogleMulti(text)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Unable to get quotes")
+		return
 	}
 
 	// Nothing was returned
-	if len(rows) == 0 {
+	if len(info) == 0 {
 		fmt.Fprintln(os.Stderr, "There's nothing here")
 		return
 	}
 
-	// Add the cumulative total
-	rows = append(rows, []string{"Avg.", "--", fmt.Sprintf("%0.3f%%", total/float64(len(rows)))})
+	rows := make([][]interface{}, len(info))
+	for i := range rows {
+		rows[i] = []interface{}{info[i].Ticker, info[i].Price, info[i].Change, info[i].ChangePercent}
+	}
+	//rows = append(rows, []string{"Avg.", "--", fmt.Sprintf("%0.3f%%", total/float64(len(rows)))})
 
 	t := gotabulate.Create(rows)
-	t.SetHeaders([]string{"Ticker", "Current Price", "Todays Change"})
-	t.SetAlign("left")
+	t.SetHeaders([]string{"Ticker", "Current Price", "Todays Change", "Percent Change"})
+	t.SetAlign("right")
 	t.SetHideLines([]string{"bottomLine", "betweenLine", "top"})
 	quote = t.Render("simple")
 	quote = fmt.Sprintf("```%v```", quote)
 
 	// Pull a chart if single stock requested
-	if len(rows) == 2 {
+	if len(rows) == 1 {
 
-		if len(text[0]) == 6 {
+		if len(text) == 6 {
 			chartFunc = stock.GetChartLinkCurrencyFinviz
 		} else {
 			chartFunc = stock.GetChartLinkFinviz
 		}
 
 		// Pull a stock chart
-		chartUrl, err := chartFunc(text[0])
+		chartUrl, err := chartFunc(text)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "Error: ", err)
 			return

@@ -11,6 +11,97 @@ import (
 	"golang.org/x/net/html"
 )
 
+type googleQuotes []googleQuote
+
+type googleQuote struct {
+	Id     string `json:"id"`
+	T      string `json:"t"`
+	E      string `json:"e"`
+	L      string `json:"l"`
+	LFix   string `json:"l_fix"`
+	LCur   string `json:"l_cur"`
+	S      string `json:"s"`
+	Ltt    string `json:"ltt"`
+	Lt     string `json:"lt"`
+	Ltdts  string `json:"lt_dts"`
+	C      string `json:"c"`
+	Cfix   string `json:"c_fix"`
+	Cp     string `json:"cp"`
+	Cpfix  string `json:"cp_fix"`
+	Ccol   string `json:"ccol"`
+	Pclfix string `json:"pcls_fix"`
+	El     string `json:"el"`
+	Elfix  string `json:"el_fix"`
+	Elcur  string `json:"el_cir"`
+	Elt    string `json:"elt"`
+	Ec     string `json:"ec"`
+	Ecfix  string `json:"ec_fix"`
+	Ecp    string `json:"ecp"`
+	Ecpfix string `json:"ecp_fix"`
+	Eccol  string `json:"eccol"`
+	Div    string `json:"div"`
+	Yld    string `json:"yld"`
+}
+
+type Info struct {
+	Ticker        string
+	Price         float64
+	Change        float64
+	ChangePercent float64
+}
+
+func GetPriceGoogleMulti(symbol string) ([]Info, error) {
+
+	symbol = strings.ToUpper(symbol)
+	symbol = strings.Replace(symbol, " ", ",", -1)
+
+	url := fmt.Sprintf("http://finance.google.com/finance/info?client=ig&q=%v", symbol)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+
+	// Read the quote into the slice
+	defer resp.Body.Close()
+	jsonQuote, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	// Google quotes start with '//' as the response
+	jsonQuote = jsonQuote[4:]
+
+	var q googleQuotes
+	err = json.Unmarshal(jsonQuote, &q)
+	if err != nil {
+		return nil, err
+	}
+
+	// Pull the current price and the change
+	info := make([]Info, len(q))
+	for i := range q {
+		price, err := strconv.ParseFloat(q[i].LCur, 64)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to parse price")
+		}
+
+		change, err := strconv.ParseFloat(q[i].C, 64)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to parse change")
+		}
+
+		percent, err := strconv.ParseFloat(q[i].Cp, 64)
+		if err != nil {
+			return nil, fmt.Errorf("Unable to parse percent change")
+		}
+
+		info[i] = Info{q[i].T, price, change, percent}
+	}
+
+	return info, nil
+}
+
 // GetPriceGoolge returns the price of the security
 func GetPriceGoogle(symbol string) (float64, error) {
 

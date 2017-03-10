@@ -112,3 +112,15 @@ func TestGetCurrencyYahoo(t *testing.T) {
 
 	fmt.Println(quote)
 }
+
+func TestGetPriceGoogleMulti(t *testing.T) {
+
+	symbol := "GOOG AAPL MSFT TSLA"
+	price, err := GetPriceGoogleMulti(symbol)
+	if err != nil {
+		fmt.Println(err)
+		t.Fail()
+	}
+
+	fmt.Println(price)
+}

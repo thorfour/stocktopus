@@ -6,26 +6,26 @@ import (
 )
 
 func TestGetQuotes(t *testing.T) {
-	getQuotes([]string{"tsla", "amd", "wdc", "intc", "gpro", "f", "goog"}, nil)
+	getQuotes("tsla amd wdc intc gpro f goog", nil)
 }
 
 func TestGetQuotesSingle(t *testing.T) {
-	getQuotes([]string{"tsla"}, nil)
+	getQuotes("tsla", nil)
 }
 
 func TestGetQuotesSingleWithCurrency(t *testing.T) {
-	getQuotes([]string{"tsla", "btcusd", "amd"}, nil)
+	getQuotes("tsla btcusd amd", nil)
 }
 
 func TestGetQuotesBad(t *testing.T) {
 	fmt.Println("Middle -----------------------------------------")
-	getQuotes([]string{"tsla", "osghoevcmi", "amd"}, nil)
+	getQuotes("tsla osghoevcmi amd", nil)
 	fmt.Println("Only-----------------------------------------")
-	getQuotes([]string{"osghoevcmi"}, nil)
+	getQuotes("osghoevcmi", nil)
 	fmt.Println("Start-----------------------------------------")
-	getQuotes([]string{"osghoevcmi", "amd", "tsla"}, nil)
+	getQuotes("osghoevcmi amd tsla", nil)
 	fmt.Println("End-----------------------------------------")
-	getQuotes([]string{"tsla", "amd", "aorghreqcm"}, nil)
+	getQuotes("tsla amd aorghreqcm", nil)
 	fmt.Println("Two-to-one-------------------------------------")
-	getQuotes([]string{"amd", "aorghreqcm"}, nil)
+	getQuotes("amd aorghreqcm", nil)
 }
