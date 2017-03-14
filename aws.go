@@ -133,7 +133,7 @@ func print(text []string, decodedMap url.Values) {
 		return
 	}
 
-	getQuotes(decodedMap["text"][0], decodedMap)
+	getQuotes(list, decodedMap)
 }
 
 // Remove a single ticker from a watch list
@@ -227,7 +227,7 @@ func getQuotes(text string, decodedMap url.Values) {
 	quote = fmt.Sprintf("```%v```", quote)
 
 	// Pull a chart if single stock requested
-	if len(rows) == 1 {
+	if len(rows) == 2 {
 
 		if len(text) == 6 {
 			chartFunc = stock.GetChartLinkCurrencyFinviz
