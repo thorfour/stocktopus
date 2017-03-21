@@ -105,7 +105,7 @@ func add(text []string, decodedMap url.Values) {
 
 	// If the first arg starts with '#' then it's the name of the list
 	if text[0][0] == '#' {
-		user = []string{strings.ToLower(text[0][1:])}
+		user = []string{strings.ToLower(text[0][1:]), decodedMap["team_id"][0]}
 		text = text[1:] // Remove list name
 	}
 
@@ -132,7 +132,7 @@ func print(text []string, decodedMap url.Values) {
 
 	// If the first arg starts with '#' then it's the name of the list
 	if len(text) == 1 && text[0][0] == '#' {
-		user = []string{strings.ToLower(text[0][1:])}
+		user = []string{strings.ToLower(text[0][1:]), decodedMap["team_id"][0]}
 		text = text[1:] // Remove list name
 	} else if len(text) >= 1 {
 		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
@@ -163,7 +163,7 @@ func remove(text []string, decodedMap url.Values) {
 
 	// If the first arg starts with '#' then it's the name of the list
 	if len(text) > 1 && text[0][0] == '#' {
-		user = []string{strings.ToLower(text[0][1:])}
+		user = []string{strings.ToLower(text[0][1:]), decodedMap["team_id"][0]}
 		text = text[1:] // Remove list name
 	} else if len(text) != 1 { // Only allow single removal
 		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
@@ -193,7 +193,7 @@ func clearList(text []string, decodedMap url.Values) {
 
 	// If the first arg starts with '#' then it's the name of the list
 	if len(text) == 1 && text[0][0] == '#' {
-		user = []string{strings.ToLower(text[0][1:])}
+		user = []string{strings.ToLower(text[0][1:]), decodedMap["team_id"][0]}
 		text = text[1:] // Remove list name
 	} else if len(text) >= 1 {
 		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
