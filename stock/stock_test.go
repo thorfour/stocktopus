@@ -124,3 +124,22 @@ func TestGetPriceGoogleMulti(t *testing.T) {
 
 	fmt.Println(price)
 }
+
+func TestForeignStock(t *testing.T) {
+
+	sym := "tse:WEED OTCMKTS:NTDOY"
+	price, err := GetPriceGoogleMulti(sym)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println(price)
+
+	sym = "tse:WEED"
+	p, err := GetPriceGoogle(sym)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println(p)
+}
