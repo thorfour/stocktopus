@@ -102,6 +102,13 @@ func add(text []string, decodedMap url.Values) {
 	// User and token to be used as watch list lookup
 	user := decodedMap["user_id"]
 	token := decodedMap["token"]
+
+	// If the first arg starts with '#' then it's the name of the list
+	if text[0][0] == '#' {
+		user = []string{strings.ToLower(text[0][1:])}
+		text = text[1:] // Remove list name
+	}
+
 	key := fmt.Sprintf("%v%v", token, user)
 
 	err := aws.AddToList(key, text)
@@ -116,14 +123,22 @@ func add(text []string, decodedMap url.Values) {
 // Print out a watchlist
 func print(text []string, decodedMap url.Values) {
 
-	if len(text) > 1 { // Requested more than just LIST
+	// User and token to be used as watch list lookup
+	user := decodedMap["user_id"]
+	token := decodedMap["token"]
+
+	// Chop off printList arg
+	text = text[1:]
+
+	// If the first arg starts with '#' then it's the name of the list
+	if len(text) == 1 && text[0][0] == '#' {
+		user = []string{strings.ToLower(text[0][1:])}
+		text = text[1:] // Remove list name
+	} else if len(text) >= 1 {
 		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
 		return
 	}
 
-	// User and token to be used as watch list lookup
-	user := decodedMap["user_id"]
-	token := decodedMap["token"]
 	key := fmt.Sprintf("%v%v", token, user)
 
 	// Get and print watch list
@@ -139,17 +154,22 @@ func print(text []string, decodedMap url.Values) {
 // Remove a single ticker from a watch list
 func remove(text []string, decodedMap url.Values) {
 
-	if len(text) != 2 { // Only allow removal of 1 item
-		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
-		return
-	}
-
 	// Chop off printList arg
 	text = text[1:]
 
 	// User and token to be used as watch list lookup
 	user := decodedMap["user_id"]
 	token := decodedMap["token"]
+
+	// If the first arg starts with '#' then it's the name of the list
+	if len(text) > 1 && text[0][0] == '#' {
+		user = []string{strings.ToLower(text[0][1:])}
+		text = text[1:] // Remove list name
+	} else if len(text) != 1 { // Only allow single removal
+		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
+		return
+	}
+
 	key := fmt.Sprintf("%v%v", token, user)
 
 	// Remove from watch list
@@ -165,13 +185,21 @@ func remove(text []string, decodedMap url.Values) {
 // Delete a watch list. Deletes the whole file instead of clearing
 func clearList(text []string, decodedMap url.Values) {
 
-	if len(text) > 1 {
+	user := decodedMap["user_id"]
+	token := decodedMap["token"]
+
+	// Chop off printList arg
+	text = text[1:]
+
+	// If the first arg starts with '#' then it's the name of the list
+	if len(text) == 1 && text[0][0] == '#' {
+		user = []string{strings.ToLower(text[0][1:])}
+		text = text[1:] // Remove list name
+	} else if len(text) >= 1 {
 		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
 		return
 	}
 
-	user := decodedMap["user_id"]
-	token := decodedMap["token"]
 	key := fmt.Sprintf("%v%v", token, user)
 
 	err := aws.Clear(key)
