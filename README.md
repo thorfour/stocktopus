@@ -32,6 +32,15 @@ The aws slash command will respond to slash commands. Single tickers will be a q
 for a complete list of commands the bot supports.
 > /stocktopus help 
 
+In addition to what is covered in the help menu, stocktopus also supports team-wide watchlists. To utilize these you use the same format as you would for your personal watch list but simple add a name after a `#` character immediately after the command.
+
+For example:
+`/stocktopus watch #funlist GOOG`
+Would add GOOG to a watch list called funlist, and then anyone in your slack team can access that same list Ex. `/stocktopus list #funlist`
+
+You might also want to watch/buy or lookup securities listed on non-US exchanges. To do so simply add the exchange followed by a colon(:) before the ticker name. 
+Ex. `/stocktopus tse:are` to list the ARE stock from the Toronto Stock Exchange 
+
 ## Privacy Policy
 
 Stocktopus does not collect any personal identifying information. It does not store a history of your requests. The only data it does store is a unique ID received from Slack for a user if they opt to use the list or play money features. If you use the list or play money features it also stores the list of stocks a user has bought or added to their watch list. 
