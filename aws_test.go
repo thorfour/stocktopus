@@ -5,6 +5,10 @@ import (
 	"testing"
 )
 
+func TestGetQuotesDelimited(t *testing.T) {
+	getQuotes("brk.a", nil)
+}
+
 func TestGetQuotes(t *testing.T) {
 	getQuotes("tsla amd wdc intc gpro f goog", nil)
 }

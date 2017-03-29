@@ -81,12 +81,12 @@ func GetPriceGoogleMulti(symbol string) ([]Info, error) {
 	// Pull the current price and the change
 	info := make([]Info, len(q))
 	for i := range q {
-		price, err := strconv.ParseFloat(strings.TrimLeft(q[i].LCur, "CA$"), 64)
+		price, err := strconv.ParseFloat(strings.Replace(strings.TrimLeft(q[i].LCur, "CA$"), ",", "", -1), 64)
 		if err != nil {
 			return nil, fmt.Errorf("Unable to parse price")
 		}
 
-		change, err := strconv.ParseFloat(q[i].C, 64)
+		change, err := strconv.ParseFloat(strings.Replace(q[i].C, ",", "", -1), 64)
 		if err != nil {
 			return nil, fmt.Errorf("Unable to parse change")
 		}

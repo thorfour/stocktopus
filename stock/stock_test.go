@@ -8,21 +8,14 @@ import (
 
 func TestQuoteGoogle(t *testing.T) {
 
-	resp, err := GetQuoteGoogle("AMD")
-	if err != nil {
-		t.Fail()
+	list := []string{"AMD", "TWLO", "WDC", "BRK.A"}
+	for _, s := range list {
+		resp, err := GetQuoteGoogle(s)
+		if err != nil {
+			t.Fail()
+		}
+		fmt.Println(resp)
 	}
-	fmt.Println(resp)
-	resp, err = GetQuoteGoogle("TWLO")
-	if err != nil {
-		t.Fail()
-	}
-	fmt.Println(resp)
-	resp, err = GetQuoteGoogle("WDC")
-	if err != nil {
-		t.Fail()
-	}
-	fmt.Println(resp)
 }
 
 func TestQuoteMOD(t *testing.T) {
@@ -115,7 +108,7 @@ func TestGetCurrencyYahoo(t *testing.T) {
 
 func TestGetPriceGoogleMulti(t *testing.T) {
 
-	symbol := "GOOG AAPL MSFT TSLA"
+	symbol := "GOOG AAPL MSFT TSLA BRK.A"
 	price, err := GetPriceGoogleMulti(symbol)
 	if err != nil {
 		fmt.Println(err)
