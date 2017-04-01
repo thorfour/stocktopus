@@ -1,8 +1,7 @@
 go_import_path: github.com/thourfor/stocktopus
 
 install:
- - go get github.com/bndr/gotabulate
- - go get github.com/aws/aws-sdk-go
+ - go get -t -v ./...
 
 language: go
 go: 
