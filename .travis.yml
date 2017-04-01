@@ -1,6 +1,7 @@
 install:
  - go get github.com/bndr/gotabulate
  - go get github.com/aws/aws-sdk-go
+ - go get golang.org/x/net
 
 language: go
 go: 
