@@ -1,10 +1,10 @@
-go_import_path: github.com/thourfor/stocktopus
+install:
+ - go get github.com/thourfor/stocktopus/stock
+ - go get github.com/thourfor/stocktopus/aws
 
 language: go
 go: 
  - 1.8
- - 1.7.x
- - master
 
 script:
  - go test -v ./...
