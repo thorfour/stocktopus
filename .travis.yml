@@ -1,6 +1,7 @@
 install:
  - go get github.com/thourfor/stocktopus/stock
  - go get github.com/thourfor/stocktopus/aws
+ - go get github.com/bndr/gotabulate
 
 language: go
 go: 
