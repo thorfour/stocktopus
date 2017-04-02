@@ -1,11 +1,20 @@
 go_import_path: github.com/thourfor/stocktopus
 
 install:
- - go get -t -v ./...
+- go get -t -v ./...
+- go get golang.org/x/tools/cmd/cover
+- go get github.com/mattn/goveralls
 
 language: go
-go: 
- - 1.8
+
+go:
+- 1.8
 
 script:
  - go test -v ./...
+ - go test -v -covermode=count -coverprofile=coverage.out $HOME/gopath/bin/goveralls
+ -coverprofile=coverage.out -service=travis-ci -repotoken $COVERALLS_TOKEN
+
+env:
+  global:
+    secure: MX7Zkb39a6YSONFt0vJ9A+jg0eraKoowCiL/YDMSTOHaqI8T9sH/ZCoNBFUO6R+60zCLJqYA7B0uNaqs9oiJrLkzZm1oK3FEEa4p+GNbCZNylUqrbseqq6C5mntiKqtxJqCEx4xedd/GlNwy8vjIlaA9hX9fhsBt8eUTxUx4OL3v15mq5GKAX6cyTpXLm5PInCXtgvHocKydzKxd2TiUbWMJqTQDjI/IQVCSKPVrBifj+8JfERYMJ9Hi7NVel9oOUO4lUZQRj13x+cql7fAqkGfKOkrS9gVc+3XzA1CDD2M4M+ULQlNOEkqGKqSs8petQhlrFoHkngxN+o4ffuDvYrdFf/ZVo78uG7EXm0wGtw7iGtPwLL/zUK29ZGvsdFV2x5BnQM279HTX0XEhFeVIRNOf8ooIdi4wgK/DEFt77y5XgkiQbipt71FEi9z5MTx0LAdG21lG+RiWTfmu7FJZc61SfDYUFE4Nm4pS/Leyi0IylFzWXjpKsjxXp5/FrCcDMi8vLAVVJSOoP+C6eC6tWCpGzzoYhTF8x70xy2uJGHv5UaJcSAjYsamtr7XbU1tB3pwzpRItoK96Vk0epT9bnWrgDtYhr/X8jh1FTiwvYqMvUTcfiiriyUCF46vU13PyMaZi/Qubaq21kmAYPfW23m/gyQR5B3/++0XG0MUkivo=
