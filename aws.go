@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 
+	redis "gopkg.in/redis.v5"
+
 	"github.com/bndr/gotabulate"
 	stock "github.com/thourfor/gostock"
 	"github.com/thourfor/stocktopus/aws"
@@ -111,7 +113,15 @@ func add(text []string, decodedMap url.Values) {
 
 	key := fmt.Sprintf("%v%v", token, user)
 
-	err := aws.AddToList(key, text)
+	rClient := ConnectRedis()
+
+	// Convert []string to []interface{} for the SAdd call
+	members := []interface{}{}
+	for _, member := range text {
+		members = append(members, interface{}(member))
+	}
+
+	_, err := rClient.SAdd(key, members...).Result()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, fmt.Sprintf("Error addtolist: %v", err))
 		return
@@ -141,14 +151,16 @@ func print(text []string, decodedMap url.Values) {
 
 	key := fmt.Sprintf("%v%v", token, user)
 
+	rClient := ConnectRedis()
+
 	// Get and print watch list
-	list, err := aws.GetList(key)
+	list, err := rClient.SMembers(key).Result()
 	if err != nil || len(list) == 0 {
 		fmt.Fprintln(os.Stderr, "Error: No List")
 		return
 	}
 
-	getQuotes(list, decodedMap)
+	getQuotes(strings.Join(list, " "), decodedMap)
 }
 
 // Remove a single ticker from a watch list
@@ -165,15 +177,20 @@ func remove(text []string, decodedMap url.Values) {
 	if len(text) > 1 && text[0][0] == '#' {
 		user = []string{strings.ToLower(text[0][1:]), decodedMap["team_id"][0]}
 		text = text[1:] // Remove list name
-	} else if len(text) != 1 { // Only allow single removal
-		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
-		return
 	}
 
 	key := fmt.Sprintf("%v%v", token, user)
 
+	rClient := ConnectRedis()
+
+	// Convert []string to []interface{} for the SRem call
+	members := []interface{}{}
+	for _, member := range text {
+		members = append(members, interface{}(member))
+	}
+
 	// Remove from watch list
-	err := aws.RmFromList(key, text)
+	_, err := rClient.SRem(key, members...).Result()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, fmt.Sprintf("Error rmfromlist: %v", err))
 		return
@@ -202,7 +219,9 @@ func clearList(text []string, decodedMap url.Values) {
 
 	key := fmt.Sprintf("%v%v", token, user)
 
-	err := aws.Clear(key)
+	rClient := ConnectRedis()
+
+	_, err := rClient.Del(key).Result()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, fmt.Sprintf("Error clear: %v", err))
 	}
@@ -573,4 +592,12 @@ func loadAccount(key string) (*account, error) {
 	}
 
 	return acct, nil
+}
+
+func ConnectRedis() *redis.Client {
+	return redis.NewClient(&redis.Options{
+		Addr:     redisAddr,
+		Password: redisPw,
+		DB:       0,
+	})
 }
