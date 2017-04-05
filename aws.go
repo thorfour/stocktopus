@@ -12,8 +12,8 @@ import (
 	"strings"
 
 	"github.com/bndr/gotabulate"
+	stock "github.com/thourfor/gostock"
 	"github.com/thourfor/stocktopus/aws"
-	"github.com/thourfor/stocktopus/stock"
 )
 
 type cmdFunc func([]string, url.Values)

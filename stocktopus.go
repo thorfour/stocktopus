@@ -7,8 +7,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/stocktopus/slack"
-	"github.com/stocktopus/stock"
+	"github.com/thourfor/gostock"
+	"github.com/thourfor/stocktopus/slack"
 )
 
 func main() {
@@ -30,13 +30,13 @@ func main() {
 		}
 
 		if len(msg) != 0 {
-			quote, err := stock.GetQuoteGoogle(msg)
+			quote, err := gostock.GetQuoteGoogle(msg)
 			if err != nil {
 				continue
 			}
 
 			// Post the quote
-			slackBot.Send(quote)
+			slackBot.Send(fmt.Sprintf("Current Price: %v", quote.LCur))
 		}
 	}
 }
