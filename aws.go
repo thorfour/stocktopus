@@ -3,8 +3,7 @@
 package main
 
 import (
-	"bytes"
-	"encoding/gob"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"os"
@@ -15,7 +14,6 @@ import (
 
 	"github.com/bndr/gotabulate"
 	stock "github.com/thourfor/gostock"
-	"github.com/thourfor/stocktopus/aws"
 )
 
 type cmdFunc func([]string, url.Values)
@@ -354,14 +352,16 @@ func depositPlay(text []string, decodedMap url.Values) {
 	token := decodedMap["token"]
 	key := fmt.Sprintf("%v%v%v", "ACCT", token, user)
 
+	client := ConnectRedis()
+
 	// Load the account
-	acct, err := loadAccount(key)
+	acct, err := loadAccount(client, key)
 	if err != nil {
 		// If no file exits then create a new account
 		newAcct := new(account)
 		newAcct.Holdings = make(map[string]Holding)
 		newAcct.Balance = float64(amt)
-		saveAccount(newAcct, key)
+		saveAccount(client, newAcct, key)
 		fmt.Fprintln(os.Stderr, fmt.Sprintf("New Balance: %v", newAcct.Balance))
 		return
 	}
@@ -369,7 +369,7 @@ func depositPlay(text []string, decodedMap url.Values) {
 	// Add amount to balance
 	acct.Balance += float64(amt)
 
-	err = saveAccount(acct, key)
+	err = saveAccount(client, acct, key)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, fmt.Sprintf("Unable to save account: %v", err))
 	}
@@ -391,10 +391,12 @@ func resetPlay(text []string, decodedMap url.Values) {
 	token := decodedMap["token"]
 	key := fmt.Sprintf("%v%v%v", "ACCT", token, user)
 
+	client := ConnectRedis()
+
 	newAcct := new(account)
 	newAcct.Holdings = make(map[string]Holding)
 	newAcct.Balance = float64(0)
-	saveAccount(newAcct, key)
+	saveAccount(client, newAcct, key)
 	fmt.Fprintln(os.Stderr, fmt.Sprintf("New Balance: %v", newAcct.Balance))
 }
 
@@ -410,7 +412,9 @@ func portfolioPlay(text []string, decodedMap url.Values) {
 	token := decodedMap["token"]
 	key := fmt.Sprintf("%v%v%v", "ACCT", token, user)
 
-	acct, err := loadAccount(key)
+	client := ConnectRedis()
+
+	acct, err := loadAccount(client, key)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Unable to load account")
 		return
@@ -467,7 +471,9 @@ func buyPlay(text []string, decodedMap url.Values) {
 	token := decodedMap["token"]
 	key := fmt.Sprintf("%v%v%v", "ACCT", token, user)
 
-	acct, err := loadAccount(key)
+	client := ConnectRedis()
+
+	acct, err := loadAccount(client, key)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Unable to load account")
 		return
@@ -490,7 +496,7 @@ func buyPlay(text []string, decodedMap url.Values) {
 	}
 
 	// write account
-	err = saveAccount(acct, key)
+	err = saveAccount(client, acct, key)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, fmt.Sprintf("Unable to save account: %v", err))
 		return
@@ -529,7 +535,9 @@ func sellPlay(text []string, decodedMap url.Values) {
 	token := decodedMap["token"]
 	key := fmt.Sprintf("%v%v%v", "ACCT", token, user)
 
-	acct, err := loadAccount(key)
+	client := ConnectRedis()
+
+	acct, err := loadAccount(client, key)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Unable to load account")
 		return
@@ -552,7 +560,7 @@ func sellPlay(text []string, decodedMap url.Values) {
 	acct.Balance += float64(amt) * price
 
 	// write account
-	err = saveAccount(acct, key)
+	err = saveAccount(client, acct, key)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, fmt.Sprintf("Unable to save account: %v", err))
 		return
@@ -561,32 +569,30 @@ func sellPlay(text []string, decodedMap url.Values) {
 	fmt.Fprintln(os.Stderr, "Done")
 }
 
-func saveAccount(acct *account, key string) error {
+func saveAccount(client *redis.Client, acct *account, key string) error {
 
 	// Encode account
-	var eb bytes.Buffer
-	e := gob.NewEncoder(&eb)
-	err := e.Encode(acct)
+	serialized, err := json.Marshal(acct)
 	if err != nil {
 		return fmt.Errorf("Unable to encode account")
 	}
 
-	// Save the account to file
-	return aws.WriteFile(key, eb.Bytes())
+	// Save the account to redis
+	_, err = client.Set(key, string(serialized), 0).Result()
+
+	return err
 }
 
-func loadAccount(key string) (*account, error) {
+func loadAccount(client *redis.Client, key string) (*account, error) {
 
-	f, err := aws.LoadFile(key)
+	serialized, err := client.Get(key).Result()
 	if err != nil {
 		return nil, fmt.Errorf("Unable to load account: %v", err)
 	}
 
 	// Unserialize acct from file
 	acct := new(account)
-	buf := bytes.NewBuffer(f)
-	d := gob.NewDecoder(buf)
-	err = d.Decode(acct)
+	err = json.Unmarshal([]byte(serialized), acct)
 	if err != nil {
 		return nil, fmt.Errorf("Unable to decode account")
 	}
