@@ -37,7 +37,7 @@ In addition to what is covered in the help menu, stocktopus also supports team-w
 
 For example:
 `/stocktopus watch #funlist GOOG`
-Would add GOOG to a watch list called funlist, and then anyone in your slack team can access that same list Ex. `/stocktopus list #funlist`
+Would add GOOG to a watch list called funlist, and then anyone in your Slack team can access that same list Ex. `/stocktopus list #funlist`
 
 You might also want to watch/buy or lookup securities listed on non-US exchanges. To do so simply add the exchange followed by a colon(:) before the ticker name. 
 Ex. `/stocktopus tse:are` to list the ARE stock from the Toronto Stock Exchange 
@@ -52,6 +52,6 @@ If you have questions comments or concerns about the app please email thorvald@p
 
 ## Donations
 
-If you like the app and would like to donate to help us pay for server costs we accept Bitcoin `19RdnGfDfAcwaz8C4tLm7jaUk99mg4aDqx`
+If you like the app and would like to donate to help us pay for server costs we accept Bitcoin `18Q4Nnyc3AxrHis5ATioWSZ6hn5SqyzVyj`
 
 #### Special Thanks to /u/shirokarasu over at r/DrawForMe for creating the icon
