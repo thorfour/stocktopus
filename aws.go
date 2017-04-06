@@ -420,23 +420,43 @@ func portfolioPlay(text []string, decodedMap url.Values) {
 		return
 	}
 
-	s := fmt.Sprintf("Balance: $%0.2f", acct.Balance)
+	var list []string // List of all tickers
+	for ticker := range acct.Holdings {
+		list = append(list, ticker)
+	}
+
+	// Pull the quote
+	info, err := stock.GetPriceGoogleMulti(strings.Join(list, " "))
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Unable to get quotes")
+		return
+	}
+
+	total := float64(0)
+	totalChange := float64(0)
 	if len(acct.Holdings) > 0 {
 		rows := make([][]interface{}, len(acct.Holdings))
-		i := 0
-		for k, v := range acct.Holdings {
-			rows[i] = []interface{}{k, v.Shares, v.Strike}
-			i++
+		for i := range info {
+			h := acct.Holdings[info[i].Ticker]
+			total += float64(h.Shares) * info[i].Price
+			delta := float64(h.Shares) * (info[i].Price - h.Strike)
+			totalChange += delta
+			deltaStr := fmt.Sprintf("%0.2f", delta)
+			rows[i] = []interface{}{info[i].Ticker, h.Shares, h.Strike, info[i].Price, deltaStr}
 		}
 
+		rows = append(rows, []interface{}{"Total", "---", "---", "---", fmt.Sprintf("%0.2f", totalChange)})
+
 		t := gotabulate.Create(rows)
-		t.SetHeaders([]string{"Ticker", "Shares", "Strike"})
+		t.SetHeaders([]string{"Ticker", "Shares", "Strike", "Current", "Gain/Loss $"})
 		t.SetAlign("left")
 		t.SetHideLines([]string{"bottomLine", "betweenLine", "top"})
 		table := t.Render("simple")
-		resp := fmt.Sprintf("%v\n```%v```", s, table)
+		summary := fmt.Sprintf("Portfolio Value: $%0.2f\nBalance: $%0.2f\nTotal: $%0.2f", total, acct.Balance, total+acct.Balance)
+		resp := fmt.Sprintf("```%v\n%v```", table, summary)
 		fmt.Print(resp)
 	} else {
+		s := fmt.Sprintf("Balance: $%0.2f", acct.Balance)
 		fmt.Print(s)
 	}
 }
