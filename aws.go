@@ -420,21 +420,22 @@ func portfolioPlay(text []string, decodedMap url.Values) {
 		return
 	}
 
-	var list []string // List of all tickers
-	for ticker := range acct.Holdings {
-		list = append(list, ticker)
-	}
-
-	// Pull the quote
-	info, err := stock.GetPriceGoogleMulti(strings.Join(list, " "))
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Unable to get quotes")
-		return
-	}
-
 	total := float64(0)
 	totalChange := float64(0)
 	if len(acct.Holdings) > 0 {
+
+		var list []string // List of all tickers
+		for ticker := range acct.Holdings {
+			list = append(list, ticker)
+		}
+
+		// Pull the quote
+		info, err := stock.GetPriceGoogleMulti(strings.Join(list, " "))
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Unable to get quotes")
+			return
+		}
+
 		rows := make([][]interface{}, len(acct.Holdings))
 		for i := range info {
 			h := acct.Holdings[info[i].Ticker]
