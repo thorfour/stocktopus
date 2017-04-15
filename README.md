@@ -9,10 +9,15 @@
 # stocktopus
 Simple Slack bot that posts stock prices. It can be build as an RTM Slack bot, or a slash command bot that loads into aws lambda
 
+## Download
+
+`go get github.com/thourfor/stocktopus`
+
 ## Build
-`go build -tags RTM`
-or for aws
+for aws lambda
 `go build`
+or for standalone real time messaging bot
+`go build -tags RTM`
 
 ## Run
 `./stocktopus [slack-bot-token]`
