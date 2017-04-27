@@ -111,7 +111,7 @@ func add(text []string, decodedMap url.Values) {
 
 	key := fmt.Sprintf("%v%v", token, user)
 
-	rClient := ConnectRedis()
+	rClient := connectRedis()
 
 	// Convert []string to []interface{} for the SAdd call
 	members := []interface{}{}
@@ -149,7 +149,7 @@ func print(text []string, decodedMap url.Values) {
 
 	key := fmt.Sprintf("%v%v", token, user)
 
-	rClient := ConnectRedis()
+	rClient := connectRedis()
 
 	// Get and print watch list
 	list, err := rClient.SMembers(key).Result()
@@ -179,7 +179,7 @@ func remove(text []string, decodedMap url.Values) {
 
 	key := fmt.Sprintf("%v%v", token, user)
 
-	rClient := ConnectRedis()
+	rClient := connectRedis()
 
 	// Convert []string to []interface{} for the SRem call
 	members := []interface{}{}
@@ -217,7 +217,7 @@ func clearList(text []string, decodedMap url.Values) {
 
 	key := fmt.Sprintf("%v%v", token, user)
 
-	rClient := ConnectRedis()
+	rClient := connectRedis()
 
 	_, err := rClient.Del(key).Result()
 	if err != nil {
@@ -281,14 +281,14 @@ func getQuotes(text string, decodedMap url.Values) {
 		}
 
 		// Pull a stock chart
-		chartUrl, err := chartFunc(text)
+		chartURL, err := chartFunc(text)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "Error: ", err)
 			return
 		}
 
 		// Dump the chart link to stdio
-		quote = fmt.Sprintf("%v\n%v", quote, chartUrl)
+		quote = fmt.Sprintf("%v\n%v", quote, chartURL)
 	}
 
 	// Dump the quote to stdio
@@ -322,10 +322,10 @@ func getInfo(text []string, decodedMap url.Values) {
 // account is a users play money account information
 type account struct {
 	Balance  float64
-	Holdings map[string]Holding
+	Holdings map[string]holding
 }
 
-type Holding struct {
+type holding struct {
 	Strike float64 // Strike price of the purchase
 	Shares uint64  // number of shares being held
 }
@@ -352,14 +352,14 @@ func depositPlay(text []string, decodedMap url.Values) {
 	token := decodedMap["token"]
 	key := fmt.Sprintf("%v%v%v", "ACCT", token, user)
 
-	client := ConnectRedis()
+	client := connectRedis()
 
 	// Load the account
 	acct, err := loadAccount(client, key)
 	if err != nil {
 		// If no file exits then create a new account
 		newAcct := new(account)
-		newAcct.Holdings = make(map[string]Holding)
+		newAcct.Holdings = make(map[string]holding)
 		newAcct.Balance = float64(amt)
 		saveAccount(client, newAcct, key)
 		fmt.Fprintln(os.Stderr, fmt.Sprintf("New Balance: %v", newAcct.Balance))
@@ -391,10 +391,10 @@ func resetPlay(text []string, decodedMap url.Values) {
 	token := decodedMap["token"]
 	key := fmt.Sprintf("%v%v%v", "ACCT", token, user)
 
-	client := ConnectRedis()
+	client := connectRedis()
 
 	newAcct := new(account)
-	newAcct.Holdings = make(map[string]Holding)
+	newAcct.Holdings = make(map[string]holding)
 	newAcct.Balance = float64(0)
 	saveAccount(client, newAcct, key)
 	fmt.Fprintln(os.Stderr, fmt.Sprintf("New Balance: %v", newAcct.Balance))
@@ -412,7 +412,7 @@ func portfolioPlay(text []string, decodedMap url.Values) {
 	token := decodedMap["token"]
 	key := fmt.Sprintf("%v%v%v", "ACCT", token, user)
 
-	client := ConnectRedis()
+	client := connectRedis()
 
 	acct, err := loadAccount(client, key)
 	if err != nil {
@@ -492,7 +492,7 @@ func buyPlay(text []string, decodedMap url.Values) {
 	token := decodedMap["token"]
 	key := fmt.Sprintf("%v%v%v", "ACCT", token, user)
 
-	client := ConnectRedis()
+	client := connectRedis()
 
 	acct, err := loadAccount(client, key)
 	if err != nil {
@@ -510,10 +510,10 @@ func buyPlay(text []string, decodedMap url.Values) {
 	acct.Balance -= (price * float64(amt))
 	h, ok := acct.Holdings[ticker]
 	if !ok {
-		acct.Holdings[ticker] = Holding{price, amt}
+		acct.Holdings[ticker] = holding{price, amt}
 	} else {
 		newShares := h.Shares + amt
-		acct.Holdings[ticker] = Holding{price, newShares}
+		acct.Holdings[ticker] = holding{price, newShares}
 	}
 
 	// write account
@@ -556,7 +556,7 @@ func sellPlay(text []string, decodedMap url.Values) {
 	token := decodedMap["token"]
 	key := fmt.Sprintf("%v%v%v", "ACCT", token, user)
 
-	client := ConnectRedis()
+	client := connectRedis()
 
 	acct, err := loadAccount(client, key)
 	if err != nil {
@@ -575,7 +575,7 @@ func sellPlay(text []string, decodedMap url.Values) {
 	if newShares == 0 {
 		delete(acct.Holdings, ticker)
 	} else {
-		acct.Holdings[ticker] = Holding{h.Strike, newShares}
+		acct.Holdings[ticker] = holding{h.Strike, newShares}
 	}
 
 	acct.Balance += float64(amt) * price
@@ -621,7 +621,7 @@ func loadAccount(client *redis.Client, key string) (*account, error) {
 	return acct, nil
 }
 
-func ConnectRedis() *redis.Client {
+func connectRedis() *redis.Client {
 	return redis.NewClient(&redis.Options{
 		Addr:     redisAddr,
 		Password: redisPw,

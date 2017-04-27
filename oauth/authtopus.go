@@ -8,21 +8,16 @@ import (
 )
 
 const (
-	oathUrl     = "https://slack.com/api/oauth.access"
+	oathURL     = "https://slack.com/api/oauth.access"
 	encodedType = "application/x-www-form-urlencoded"
 )
-
-type query struct {
-	code  string `json:"code"`
-	state string `json:"state"`
-}
 
 func main() {
 
 	// Temp auth code from slack
 	code := os.Args[1]
 
-	postURL, _ := url.Parse(oathUrl)
+	postURL, _ := url.Parse(oathURL)
 	params := url.Values{}
 	params.Add("client_id", CLIENTID)
 	params.Add("client_secret", CLIENTSECRET)

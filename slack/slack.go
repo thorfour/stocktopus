@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	slackApiUrl = string("https://api.slack.com/")
+	slackAPIURL = string("https://api.slack.com/")
 	rtmstart    = string("https://slack.com/api/rtm.start")
 	messageType = string("message")
 )
@@ -28,14 +28,14 @@ type messageRx struct {
 
 // Standard slack message format
 type messageTx struct {
-	Id      uint64 `json:"id"`
+	ID      uint64 `json:"id"`
 	Type    string `json:"type"`
 	Channel string `json:"channel"`
 	Text    string `json:"text"`
 }
 
-// SlackRTMClient is a real time messaging client for slack
-type SlackRTMClient struct {
+// RTMClient is a real time messaging client for slack
+type RTMClient struct {
 	ws           *websocket.Conn
 	id           string
 	msg          messageRx
@@ -44,21 +44,21 @@ type SlackRTMClient struct {
 }
 
 // NewRTMClient returns a new real time messaging client for a given token
-func NewRTMClient(token string) (*SlackRTMClient, error) {
+func NewRTMClient(token string) (*RTMClient, error) {
 
 	// Request an rtm session
-	socketUrl, id, err := rtmStart(token)
+	socketURL, id, err := rtmStart(token)
 	if err != nil {
 		return nil, err
 	}
 
 	// Connect to the rtm socket
-	ws, err := websocket.Dial(socketUrl, "", slackApiUrl)
+	ws, err := websocket.Dial(socketURL, "", slackAPIURL)
 	if err != nil {
 		return nil, err
 	}
 
-	return &SlackRTMClient{ws, id, messageRx{}, messageTx{}, 0}, nil
+	return &RTMClient{ws, id, messageRx{}, messageTx{}, 0}, nil
 }
 
 func rtmStart(tok string) (socket string, id string, err error) {
@@ -81,12 +81,12 @@ func rtmStart(tok string) (socket string, id string, err error) {
 
 	// Json format
 	type self struct {
-		Id string `json:"id"`
+		ID string `json:"id"`
 	}
 	type rtmStartResp struct {
 		Ok    bool   `json:"ok"`
 		Error string `json:"error"`
-		Url   string `json:"url"`
+		URL   string `json:"url"`
 		Self  self   `json:"self"`
 	}
 
@@ -101,11 +101,11 @@ func rtmStart(tok string) (socket string, id string, err error) {
 		return "", "", fmt.Errorf(data.Error)
 	}
 
-	return data.Url, data.Self.Id, nil
+	return data.URL, data.Self.ID, nil
 }
 
 // Receive receives data until a message for the requested id is obtained
-func (s *SlackRTMClient) Receive() (string, error) {
+func (s *RTMClient) Receive() (string, error) {
 
 	checkMsg := func() error {
 		if err := websocket.JSON.Receive(s.ws, &s.msg); err != nil {
@@ -125,12 +125,12 @@ func (s *SlackRTMClient) Receive() (string, error) {
 }
 
 // Send a response to the same channel as previous received message
-func (s *SlackRTMClient) Send(m string) error {
+func (s *RTMClient) Send(m string) error {
 
 	// Setup the send message
 	s.send.Channel = s.msg.Channel
 	s.sendSequence++
-	s.send.Id = s.sendSequence
+	s.send.ID = s.sendSequence
 	s.send.Text = m
 	s.send.Type = messageType
 
