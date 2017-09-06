@@ -2,6 +2,8 @@
 [![WTFPL licensed](https://img.shields.io/badge/license-WTFPL-blue.svg)](https://github.com/thourfor/stocktopus/blob/master/LICENSE)
 [![Build Status](https://travis-ci.org/thourfor/stocktopus.svg?branch=master)](https://travis-ci.org/thourfor/stocktopus)
 
+# :fire: The public facing stock quote APIs that Stocktopus was using have recently been deprecated. We're working on moving to a different service. :fire:
+
 <a href="https://slack.com/oauth/authorize?scope=commands&client_id=15348769670.121517816146"><img alt="Add to Slack" height="40" width="139" src="https://platform.slack-edge.com/img/add_to_slack.png" srcset="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x" /></a>
 
 <img src="stocktopus_cropped.png" height="285" width="132"/>
