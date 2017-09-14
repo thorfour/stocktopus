@@ -30,13 +30,13 @@ func main() {
 		}
 
 		if len(msg) != 0 {
-			quote, err := gostock.GetQuoteGoogle(msg)
+			quote, err := gostock.GetPriceIEX(msg)
 			if err != nil {
 				continue
 			}
 
 			// Post the quote
-			slackBot.Send(fmt.Sprintf("Current Price: %v", quote.LCur))
+			slackBot.Send(fmt.Sprintf("Current Price: %v", quote))
 		}
 	}
 }

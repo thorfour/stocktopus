@@ -238,15 +238,30 @@ func printHelp(text []string, decodedMap url.Values) {
 	fmt.Fprintln(os.Stderr, out)
 }
 
+// text is expected to be a list of tickers separated by spaces
+func getMultiQuote(text string) ([]*stock.Info, error) {
+	tickers := strings.Split(text, " ")
+	info := make([]*stock.Info, len(tickers))
+	for i, ticker := range tickers {
+		var err error
+		info[i], err = stock.GetQuoteIEX(ticker)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return info, nil
+}
+
 // Default functionality of grabbing stock quote(s)
 func getQuotes(text string, decodedMap url.Values) {
 	var chartFunc stockFunc
 	var quote string
 
 	// Pull the quote
-	info, err := stock.GetPriceGoogleMulti(text)
+	info, err := getMultiQuote(text)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Unable to get quotes")
+		fmt.Fprintln(os.Stderr, "Error: ", err)
 		return
 	}
 
@@ -265,7 +280,7 @@ func getQuotes(text string, decodedMap url.Values) {
 	rows = append(rows, []interface{}{"Avg.", "---", "---", fmt.Sprintf("%0.3f%%", cumsum/float64(len(rows)))})
 
 	t := gotabulate.Create(rows)
-	t.SetHeaders([]string{"Ticker", "Current Price", "Todays Change", "Percent Change"})
+	t.SetHeaders([]string{"Company", "Current Price", "Todays Change", "Percent Change"})
 	t.SetAlign("right")
 	t.SetHideLines([]string{"bottomLine", "betweenLine", "top"})
 	quote = t.Render("simple")
@@ -430,7 +445,7 @@ func portfolioPlay(text []string, decodedMap url.Values) {
 		}
 
 		// Pull the quote
-		info, err := stock.GetPriceGoogleMulti(strings.Join(list, " "))
+		info, err := getMultiQuote(strings.Join(list, " "))
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "Unable to get quotes")
 			return
@@ -545,7 +560,7 @@ func sellPlay(text []string, decodedMap url.Values) {
 
 	// lookup ticker price
 	ticker := text[0]
-	price, err := stock.GetPriceGoogle(ticker)
+	price, err := stock.GetPriceIEX(ticker)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, fmt.Sprintf("Unable to get price: %v", err))
 		return
