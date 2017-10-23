@@ -496,7 +496,7 @@ func buyPlay(text []string, decodedMap url.Values) {
 
 	// lookup ticker price
 	ticker := text[0]
-	price, err := stock.GetPriceGoogle(ticker)
+	price, err := stock.GetPriceIEX(ticker)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, fmt.Sprintf("Unable to get price: %v", err))
 		return
