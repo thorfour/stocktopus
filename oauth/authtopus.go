@@ -31,5 +31,5 @@ func main() {
 	}
 
 	defer resp.Body.Close()
-	fmt.Print("https://github.com/thourfor/stocktopus")
+	fmt.Print("https://github.com/thorfour/stocktopus")
 }

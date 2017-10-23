@@ -13,7 +13,7 @@ import (
 	redis "gopkg.in/redis.v5"
 
 	"github.com/bndr/gotabulate"
-	stock "github.com/thourfor/gostock"
+	stock "github.com/thorfour/gostock"
 )
 
 type cmdFunc func([]string, url.Values)

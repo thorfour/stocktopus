@@ -7,8 +7,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/thourfor/gostock"
-	"github.com/thourfor/stocktopus/slack"
+	"github.com/thorfour/gostock"
+	"github.com/thorfour/stocktopus/slack"
 )
 
 func main() {
