@@ -238,16 +238,32 @@ func printHelp(text []string, decodedMap url.Values) {
 	fmt.Fprintln(os.Stderr, out)
 }
 
+func iexQuoteToInfo(q stock.IEXQuote) *stock.Info {
+	s := new(stock.Info)
+	s.Ticker = q.Symbol
+	s.Price = q.DelayedPrice
+	s.ChangePercent = q.ChangePercent
+	s.Change = q.Change
+	return s
+}
+
 // text is expected to be a list of tickers separated by spaces
 func getMultiQuote(text string) ([]*stock.Info, error) {
 	tickers := strings.Split(text, " ")
 	info := make([]*stock.Info, len(tickers))
+	batch, err := stock.GetBatchQuotesIEX(tickers)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse batch into []*stock.Info
 	for i, ticker := range tickers {
-		var err error
-		info[i], err = stock.GetQuoteIEX(ticker)
+		q, err := batch.GetQuote(ticker)
 		if err != nil {
 			return nil, err
 		}
+
+		info[i] = iexQuoteToInfo(q)
 	}
 
 	return info, nil
