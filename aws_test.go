@@ -33,3 +33,7 @@ func TestGetQuotesBad(t *testing.T) {
 	fmt.Println("Two-to-one-------------------------------------")
 	getQuotes("amd aorghreqcm", nil)
 }
+
+func TestGetNews(t *testing.T) {
+	getNews([]string{"news", "amd"}, nil)
+}

@@ -31,6 +31,7 @@ const (
 	clear          = "CLEAR"
 	help           = "HELP"
 	info           = "INFO"
+	news           = "NEWS"
 
 	// Play money commands
 	buy       = "BUY"
@@ -56,6 +57,7 @@ func init() {
 		portfolio:      {portfolioPlay, "*portfolio* Prints current portfolio of play money"},
 		buy:            {buyPlay, "*buy [ticker shares]* Purchases number of shares in a security with play money"},
 		sell:           {sellPlay, "*sell [ticker shares]* Sells number of shares of specified security"},
+		news:           {getNews, "*ticker* Displays the latest news for a company"},
 		help:           {printHelp, "*[tickers...]*       pull stock quotes for list of tickers"},
 	}
 }
@@ -658,4 +660,26 @@ func connectRedis() *redis.Client {
 		Password: redisPw,
 		DB:       0,
 	})
+}
+
+// getNews will print news from requested company
+func getNews(text []string, decodedMap url.Values) {
+	if len(text) != 2 {
+		fmt.Fprintln(os.Stderr, "Error: Invalid number of arguments")
+	}
+	// Chop off news arg
+	text = text[1:]
+
+	latestNews, err := stock.GetIEXNews(text[0])
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Error: No news is good news right?")
+	}
+
+	// Try and pretty print them
+	var printNews string
+	for _, n := range latestNews {
+		printNews = fmt.Sprintf("%s%s\n\n", printNews, n.Summary)
+	}
+
+	fmt.Println(printNews)
 }
