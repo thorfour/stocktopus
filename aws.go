@@ -5,15 +5,18 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"strconv"
 	"strings"
 
+	"golang.org/x/net/html"
 	redis "gopkg.in/redis.v5"
 
 	"github.com/bndr/gotabulate"
-	stock "github.com/thorfour/gostock"
+	iex "github.com/thorfour/iex/pkg/api"
+	iextypes "github.com/thorfour/iex/pkg/types"
 )
 
 type cmdFunc func([]string, url.Values)
@@ -240,35 +243,15 @@ func printHelp(text []string, decodedMap url.Values) {
 	fmt.Fprintln(os.Stderr, out)
 }
 
-func iexQuoteToInfo(q stock.IEXQuote) *stock.Info {
-	s := new(stock.Info)
-	s.Ticker = q.Symbol
-	s.Price = q.DelayedPrice
-	s.ChangePercent = q.ChangePercent
-	s.Change = q.Change
-	return s
-}
-
 // text is expected to be a list of tickers separated by spaces
-func getMultiQuote(text string) ([]*stock.Info, error) {
+func getMultiQuote(text string) (iextypes.Batch, error) {
 	tickers := strings.Split(text, " ")
-	info := make([]*stock.Info, len(tickers))
-	batch, err := stock.GetBatchQuotesIEX(tickers)
+	batch, err := iex.BatchQuotes(tickers)
 	if err != nil {
 		return nil, err
 	}
 
-	// Parse batch into []*stock.Info
-	for i, ticker := range tickers {
-		q, err := batch.GetQuote(ticker)
-		if err != nil {
-			return nil, err
-		}
-
-		info[i] = iexQuoteToInfo(q)
-	}
-
-	return info, nil
+	return batch, nil
 }
 
 // Default functionality of grabbing stock quote(s)
@@ -289,11 +272,16 @@ func getQuotes(text string, decodedMap url.Values) {
 		return
 	}
 
-	rows := make([][]interface{}, len(info))
+	rows := make([][]interface{}, 0, len(info))
 	cumsum := float64(0)
-	for i := range rows {
-		rows[i] = []interface{}{info[i].Ticker, info[i].Price, info[i].Change, fmt.Sprintf("%0.3f", (100 * info[i].ChangePercent))}
-		cumsum += (100 * info[i].ChangePercent)
+	for ticker := range info {
+		quote, err := info.Quote(ticker)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "Unable to get quote for ", ticker)
+			return
+		}
+		rows = append(rows, []interface{}{ticker, quote.IexRealtimePrice, quote.Change, fmt.Sprintf("%0.3f", (100 * quote.ChangePercent))})
+		cumsum += (100 * quote.ChangePercent)
 	}
 	rows = append(rows, []interface{}{"Avg.", "---", "---", fmt.Sprintf("%0.3f%%", cumsum/float64(len(rows)))})
 
@@ -308,9 +296,9 @@ func getQuotes(text string, decodedMap url.Values) {
 	if len(rows) == 2 {
 
 		if len(text) == 6 {
-			chartFunc = stock.GetChartLinkCurrencyFinviz
+			chartFunc = getChartLinkCurrencyFinviz
 		} else {
-			chartFunc = stock.GetChartLinkFinviz
+			chartFunc = getChartLinkFinviz
 		}
 
 		// Pull a stock chart
@@ -339,7 +327,7 @@ func getInfo(text []string, decodedMap url.Values) {
 	// Chop off arg
 	text = text[1:]
 
-	resp, err := stock.GetInfo(text[0])
+	resp, err := getStockInfo(text[0])
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error: ", err)
 		return
@@ -469,14 +457,19 @@ func portfolioPlay(text []string, decodedMap url.Values) {
 			return
 		}
 
-		rows := make([][]interface{}, len(acct.Holdings))
-		for i := range info {
-			h := acct.Holdings[info[i].Ticker]
-			total += float64(h.Shares) * info[i].Price
-			delta := float64(h.Shares) * (info[i].Price - h.Strike)
+		rows := make([][]interface{}, 0, len(acct.Holdings))
+		for ticker := range info {
+			quote, err := info.Quote(ticker)
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "Unable to get quote for ", ticker)
+				return
+			}
+			h := acct.Holdings[ticker]
+			total += float64(h.Shares) * quote.IexRealtimePrice
+			delta := float64(h.Shares) * (quote.IexRealtimePrice - h.Strike)
 			totalChange += delta
 			deltaStr := fmt.Sprintf("%0.2f", delta)
-			rows[i] = []interface{}{info[i].Ticker, h.Shares, h.Strike, info[i].Price, deltaStr}
+			rows = append(rows, []interface{}{ticker, h.Shares, h.Strike, quote.IexRealtimePrice, deltaStr})
 		}
 
 		rows = append(rows, []interface{}{"Total", "---", "---", "---", fmt.Sprintf("%0.2f", totalChange)})
@@ -514,7 +507,7 @@ func buyPlay(text []string, decodedMap url.Values) {
 
 	// lookup ticker price
 	ticker := text[0]
-	price, err := stock.GetPriceIEX(ticker)
+	price, err := iex.Price(ticker)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, fmt.Sprintf("Unable to get price: %v", err))
 		return
@@ -578,7 +571,7 @@ func sellPlay(text []string, decodedMap url.Values) {
 
 	// lookup ticker price
 	ticker := text[0]
-	price, err := stock.GetPriceIEX(ticker)
+	price, err := iex.Price(ticker)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, fmt.Sprintf("Unable to get price: %v", err))
 		return
@@ -670,7 +663,7 @@ func getNews(text []string, decodedMap url.Values) {
 	// Chop off news arg
 	text = text[1:]
 
-	latestNews, err := stock.GetIEXNews(text[0])
+	latestNews, err := iex.News(text[0])
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Error: No news is good news right?")
 	}
@@ -682,4 +675,89 @@ func getNews(text []string, decodedMap url.Values) {
 	}
 
 	fmt.Println(printNews)
+}
+
+// getStockInfo returns a company information paragrah from reuters
+func getStockInfo(symbol string) (string, error) {
+
+	symbol = strings.ToUpper(symbol)
+	url := fmt.Sprintf("http://reuters.com/finance/stocks/companyProfile?symbol=%v", symbol)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return "", err
+	}
+
+	tokenizer := html.NewTokenizer(resp.Body)
+	nextParagraph := false
+	moduleBody := false
+	for {
+		token := tokenizer.Next()
+		if token == html.ErrorToken {
+			break
+		}
+
+		if token != html.StartTagToken {
+			if nextParagraph {
+				text := string(tokenizer.Text())
+				if len(text) > 3 {
+					return text, nil
+				}
+			}
+			continue
+		}
+
+		switch {
+		case moduleBody:
+			tag, hasAttr := tokenizer.TagName()
+			if string(tag) == "div" && hasAttr {
+				key, val, _ := tokenizer.TagAttr()
+				if string(key) == "class" && string(val) == "moduleBody" {
+					nextParagraph = true
+					moduleBody = false
+				}
+			}
+		case nextParagraph:
+			tag, _ := tokenizer.TagName()
+			switch string(tag) {
+			case "p":
+				tokenizer.Next()
+				t := string(tokenizer.Text())
+				if len(t) == 0 {
+					t = "There's nothing here"
+				}
+				return t, nil
+			}
+		default:
+			// Find <div id="companyNews">
+			// after that the following tag to look for is <div class="moduleBody">
+			tag, hasAttr := tokenizer.TagName()
+			if string(tag) == "div" && hasAttr {
+				key, val, _ := tokenizer.TagAttr()
+				if string(key) == "id" && string(val) == "companyNews" {
+					moduleBody = true
+				}
+			}
+		}
+	}
+
+	return "", fmt.Errorf("Unable to find quote")
+}
+
+// getChartLinkCurrencyFinviz returns a currenct chart link from finviz
+func getChartLinkCurrencyFinviz(symbol string) (string, error) {
+
+	symbol = strings.ToUpper(symbol)
+	url := fmt.Sprintf("http://finviz.com/fx_image.ashx?%v_d1_l.png", symbol)
+
+	return url, nil
+}
+
+// getChartLinkFinviz returns a chart link from finviz
+func getChartLinkFinviz(symbol string) (string, error) {
+
+	symbol = strings.ToUpper(symbol)
+	url := fmt.Sprintf("http://finviz.com/chart.ashx?t=%v&ty=c&ta=1&p=d&s=l", symbol)
+
+	return url, nil
 }

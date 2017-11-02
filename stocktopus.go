@@ -7,7 +7,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/thorfour/gostock"
+	iex "github.com/thorfour/iex/pkg/api"
 	"github.com/thorfour/stocktopus/slack"
 )
 
@@ -30,7 +30,7 @@ func main() {
 		}
 
 		if len(msg) != 0 {
-			quote, err := gostock.GetPriceIEX(msg)
+			quote, err := iex.Price(msg)
 			if err != nil {
 				continue
 			}
