@@ -3,7 +3,7 @@ var DEBUG = false
 
 exports.handler = function(req, res) {
 
-    var queryStr = unescape(req.originalUrl)
+    var queryStr = JSON.stringify(req.body)
 
     if (DEBUG) {
         console.log(queryStr)
