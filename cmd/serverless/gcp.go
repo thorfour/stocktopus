@@ -28,7 +28,7 @@ func main() {
 	// Convert the simple map to a url.Values
 	decodedMap := make(map[string][]string)
 	for k, v := range simpleMap {
-		decodedMap[k] = strings.Split(v, " ")
+		decodedMap[k] = []string{v}
 	}
 
 	text := decodedMap["text"]
