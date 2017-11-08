@@ -3,8 +3,8 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"net/url"
 	"os"
 	"strings"
 )
@@ -17,11 +17,18 @@ func main() {
 		return
 	}
 
-	// Expect args(1) to be a url encoded string
-	decodedMap, err := url.ParseQuery(os.Args[1])
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error: url.ParseQuery")
+	// Expect args(1) to be a json map
+	simpleMap := make(map[string]string)
+	if err := json.Unmarshal([]byte(os.Args[1]), &simpleMap); err != nil {
+		fmt.Fprintln(os.Stderr, "Error: json.Unmarshal", err)
 		return
+	}
+	//`{"token":"J3Y6nj4YDGtIp6IICPD4kzmO","team_id":"T0FA8NMKQ","team_domain":"currentandformerhgst","channel_id":"G1SQ4CB5L","channel_name":"privategroup","user_id":"U0FLWC43B","user_name":"thor","command":"/spbeta","text":"amd","response_url":"https://hooks.slack.com/commands/T0FA8NMKQ/269055428499/L9BNxCckPl8cLYQFRzwYyGXO"}`
+
+	// Convert the simple map to a url.Values
+	decodedMap := make(map[string][]string)
+	for k, v := range simpleMap {
+		decodedMap[k] = strings.Split(v, " ")
 	}
 
 	text := decodedMap["text"]
