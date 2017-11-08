@@ -28,5 +28,5 @@ exports.handler = function(req, res) {
     var resp = '{ "response_type" : "' + respType + '", "text" : "' + quote + '" }';
 
     // Return json
-    res.status(200).send(resp);
+    res.status(200).type('json').send(resp);
 };
