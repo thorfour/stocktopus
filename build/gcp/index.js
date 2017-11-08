@@ -1,10 +1,9 @@
 var cp = require("child_process");
 var DEBUG = false
 
-exports.handler = function(event, context) {
+exports.handler = function(req, res) {
 
-    // Parse our the request from the body
-    var queryStr = unescape(event.body)
+    var queryStr = unescape(req.originalUrl)
 
     if (DEBUG) {
         console.log(queryStr)
@@ -29,5 +28,5 @@ exports.handler = function(event, context) {
     var resp = '{ "response_type" : "' + respType + '", "text" : "' + quote + '" }';
 
     // Return json
-    context.succeed(resp);
+    res.status(200).send(resp);
 };
