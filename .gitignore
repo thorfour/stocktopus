@@ -1,5 +1,1 @@
-CREDENTIALS.go
-SECRETS.go
-redisConfig.go
-*.zip
-colinmc
+bin/
