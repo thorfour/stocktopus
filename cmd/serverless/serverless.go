@@ -1,5 +1,3 @@
-//+build !RTM
-
 package main
 
 import (
@@ -17,6 +15,7 @@ import (
 	"github.com/bndr/gotabulate"
 	iex "github.com/thorfour/iex/pkg/api"
 	iextypes "github.com/thorfour/iex/pkg/types"
+	"github.com/thorfour/stocktopus/pkg/cfg"
 )
 
 type cmdFunc func([]string, url.Values)
@@ -649,8 +648,8 @@ func loadAccount(client *redis.Client, key string) (*account, error) {
 
 func connectRedis() *redis.Client {
 	return redis.NewClient(&redis.Options{
-		Addr:     redisAddr,
-		Password: redisPw,
+		Addr:     cfg.RedisAddr,
+		Password: cfg.RedisPw,
 		DB:       0,
 	})
 }

@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+
+	"github.com/thorfour/stocktopus/pkg/cfg"
 )
 
 const (
@@ -19,8 +21,8 @@ func main() {
 
 	postURL, _ := url.Parse(oathURL)
 	params := url.Values{}
-	params.Add("client_id", CLIENTID)
-	params.Add("client_secret", CLIENTSECRET)
+	params.Add("client_id", cfg.CLIENTID)
+	params.Add("client_secret", cfg.CLIENTSECRET)
 	params.Add("code", code)
 	postURL.RawQuery = params.Encode()
 

@@ -1,5 +1,3 @@
-//+build RTM
-
 package main
 
 import (
@@ -8,7 +6,7 @@ import (
 	"os"
 
 	iex "github.com/thorfour/iex/pkg/api"
-	"github.com/thorfour/stocktopus/slack"
+	"github.com/thorfour/stocktopus/pkg/slack"
 )
 
 func main() {

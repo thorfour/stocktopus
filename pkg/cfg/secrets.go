@@ -1,4 +1,4 @@
-package main
+package cfg
 
 const (
 	// CLIENTID is the client ID given from Slack during OAUTH setup
