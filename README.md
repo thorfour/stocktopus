@@ -14,16 +14,34 @@ Simple Slack bot that posts stock prices. It can be build as an RTM Slack bot, o
 `go get github.com/thourfor/stocktopus`
 
 ## Build
-for aws lambda
+### AWS Lambda:
+
 `make aws`
-or for standalone real time messaging bot
+
+### GCP Cloud Function:
+
+`make gcp`
+
+### RTM CLient (no longer actively developed):
+
 `make rtm`
+
+### Files should be output to bin/ directories.
+
+### Serverless:
+
+`bin/aws or bin/gcp` which will contain the binary and the zip file of the nodejs handler and binary.
+
+### Rtm:
+
+`bin/rtm` for the rtm client
 
 ## Run
 `./stocktopus [slack-bot-token]`
 or for aws
-`./aws/zipit.sh`
-and upload the stocktopus.zip to lambda
+upload the `stocktopus.zip` file in `/bin/aws` as a lambda function
+or for gcp
+upload the `stocktopus.zip` file in `bin/gcp` as a cloud function
 
 ## Usage
 The RTM bot will look for any direct messages sent to it and try to pase them as tickers, and respond with stock quotes.
