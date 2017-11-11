@@ -18,7 +18,7 @@ Simple Slack bot that posts stock prices. It can be build as an RTM Slack bot, o
 
 `make aws`
 
-### GCP Cloud Function:
+### GCP Cloud Function (under development):
 
 `make gcp`
 
