@@ -75,7 +75,7 @@ Stocktopus does not collect any personal identifying information. It does not st
 
 ## Contact
 
-If you have questions comments or concerns about the app please email thorvald@protonmail.ch
+If you have questions comments or concerns about the app please email help@stocktopus.io
 
 ## Donations
 
