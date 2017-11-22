@@ -1,7 +1,7 @@
 go_import_path: github.com/thourfor/stocktopus
 
 install:
-- go get -t -v ./...
+- git clone https://github.com/thorfour/stocktopus.git
 
 language: go
 
