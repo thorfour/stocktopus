@@ -10,4 +10,5 @@ go:
 - 1.8
 
 script:
+ - make all && make clean
  - go test -v ./...
