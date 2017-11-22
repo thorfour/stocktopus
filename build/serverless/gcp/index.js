@@ -8,6 +8,8 @@ var headers = {
 
 exports.handler = function(req, res) {
 
+    res.status(200).end();
+
     var queryStr = JSON.stringify(req.body);
 
     if (DEBUG) {
@@ -45,6 +47,4 @@ exports.handler = function(req, res) {
 
     // Return json
     request(options);
-
-    res.status(200).end();
 };
