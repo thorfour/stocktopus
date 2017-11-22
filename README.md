@@ -11,11 +11,7 @@ Simple Slack bot that posts stock prices. It can be build as an RTM Slack bot, o
 
 ## Download
 
-`git clone https://github.com/thorfour/stocktopus.git`
-
-Run in the stocktopus directory to download dependencies 
-
-`go get -t -d ./...`
+`go get -t -d github.com/thorfour/stocktopus/...`
 
 ## Build
 ### AWS Lambda:
