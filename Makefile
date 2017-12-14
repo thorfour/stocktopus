@@ -26,5 +26,7 @@ gcp: setup
 	mkdir -p ./bin/gcp/auth
 	CGO_ENABLED=0 GOOS=linux go build -o ./bin/gcp/auth/$(AUTH_NAME) ./cmd/oauth/
 	zip -j ./bin/gcp/auth/authtopus.zip ./build/authtopus/gcp/* ./bin/auth/*
+	mkdir -p ./bin/gcp/kick
+	zip -j ./bin/gcp/kick/kick.zip ./build/serverless/gcp/kick/*
 clean:
 	rm -r ./bin
