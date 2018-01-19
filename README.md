@@ -44,7 +44,7 @@ or for gcp
 upload the `stocktopus.zip` file in `bin/gcp` as a cloud function
 
 ## Usage
-The RTM bot will look for any direct messages sent to it and try to pase them as tickers, and respond with stock quotes.
+The RTM bot will look for any direct messages sent to it and try to parse them as tickers, and respond with stock quotes.
 > @stockbotname GOOGL
 
 The aws slash command will respond to slash commands. Single tickers will be a quote and inline graph. 
