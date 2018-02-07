@@ -34,6 +34,7 @@ const (
 	help           = "HELP"
 	info           = "INFO"
 	news           = "NEWS"
+	listall        = "LISTALL"
 
 	// Play money commands
 	buy       = "BUY"
@@ -42,6 +43,9 @@ const (
 	deposit   = "DEPOSIT"
 	portfolio = "PORTFOLIO"
 	reset     = "RESET"
+
+	// Key for set of lists
+	listkey = "listall"
 )
 
 var cmds map[string]cmdInfo
@@ -49,9 +53,9 @@ var cmds map[string]cmdInfo
 // Mapping of command string to function
 func init() {
 	cmds = map[string]cmdInfo{
-		addToList:      {add, "*watch [tickers...]* add tickers to personal watch list"},
-		printList:      {print, "*list*               print out personal watch list"},
-		removeFromList: {remove, "*unwatch [ticker]*   remove single ticker from watch list"},
+		addToList:      {add, "*watch [#listname] [tickers...]* add tickers to personal watch list or public if listname is provided"},
+		printList:      {print, "*list [#listname]*               print out personal watch list"},
+		removeFromList: {remove, "*unwatch [#listname] [ticker]*   remove single ticker from watch list"},
 		clear:          {clearList, "*clear*              remove entire watch list"},
 		info:           {getInfo, "*info [ticker]* print a company profile"},
 		deposit:        {depositPlay, "*deposit [amount]* deposit amount of play money into account"},
@@ -60,6 +64,7 @@ func init() {
 		buy:            {buyPlay, "*buy [ticker shares]* Purchases number of shares in a security with play money"},
 		sell:           {sellPlay, "*sell [ticker shares]* Sells number of shares of specified security"},
 		news:           {getNews, "*ticker* Displays the latest news for a company"},
+		listall:        {listAll, "Displays the names of all custom lists that have been created"},
 		help:           {printHelp, "*[tickers...]*       pull stock quotes for list of tickers"},
 	}
 }
@@ -82,7 +87,9 @@ func add(text []string, decodedMap url.Values) {
 	token := decodedMap["token"]
 
 	// If the first arg starts with '#' then it's the name of the list
+	publicList := false
 	if text[0][0] == '#' {
+		publicList = true
 		user = []string{strings.ToLower(text[0][1:]), decodedMap["team_id"][0]}
 		text = text[1:] // Remove list name
 	}
@@ -101,6 +108,11 @@ func add(text []string, decodedMap url.Values) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, fmt.Sprintf("Error addtolist: %v", err))
 		return
+	}
+
+	// Ensure the public list is added to the set of lists
+	if publicList {
+		rClient.SAdd(fmt.Sprintf("%v%v", token, listkey), user) // ignore errors since this isn't the main functionality of the func
 	}
 
 	fmt.Fprintln(os.Stderr, "Added")
@@ -733,4 +745,26 @@ func getChartLinkFinviz(symbol string) (string, error) {
 	url := fmt.Sprintf("http://finviz.com/chart.ashx?t=%v&ty=c&ta=1&p=d&s=l", symbol)
 
 	return url, nil
+}
+
+// listAll returns all the names of public watch lists
+func listAll(text []string, decodedMap url.Values) {
+	if len(text) != 1 { // listall takes no arguments
+		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
+		return
+	}
+
+	token := decodedMap["token"]
+	key := fmt.Sprintf("%v%v", token, listkey)
+
+	rClient := connectRedis()
+
+	m, err := rClient.SMembers(key).Result()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, fmt.Sprintf("Error list all: %v", err))
+		return
+	}
+
+	// Dump the quote to stdio
+	fmt.Println(m)
 }
