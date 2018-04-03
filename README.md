@@ -22,7 +22,7 @@ Simple Slack bot that posts stock prices. It can be build as an RTM Slack bot, o
 
 `make gcp`
 
-### RTM CLient (no longer actively developed):
+### RTM Client (no longer actively developed):
 
 `make rtm`
 
