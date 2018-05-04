@@ -1,4 +1,4 @@
-package main
+package stocktopus
 
 import (
 	"encoding/json"
@@ -65,6 +65,18 @@ func init() {
 }
 
 type stockFunc func(string) (string, error)
+
+// Process url string to provide stocktpus functionality
+func Process(args url.Values) {
+	text := args["text"]
+	text = strings.Split(strings.ToUpper(text[0]), " ")
+	cmd, ok := cmds[text[0]]
+	if !ok {
+		getQuotes(args["text"][0], args)
+	} else {
+		cmd.funcPtr(text, args)
+	}
+}
 
 // Add ticker(s) to a watch list
 func add(text []string, decodedMap url.Values) {
@@ -650,7 +662,7 @@ func getNews(text []string, decodedMap url.Values) {
 	fmt.Println(printNews)
 }
 
-// getStockInfo returns a company information paragrah from reuters
+// getStockInfo returns a company information paragraph from reuters
 func getStockInfo(symbol string) (string, error) {
 
 	symbol = strings.ToUpper(symbol)
