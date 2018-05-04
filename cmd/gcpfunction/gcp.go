@@ -1,12 +1,11 @@
-//+build GCP,!AWS
-
 package main
 
 import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"strings"
+
+	"github.com/thorfour/stocktopus/pkg/stocktopus"
 )
 
 // Successful command print to stdout, errors and ephermeral messages print to stderr
@@ -31,13 +30,5 @@ func main() {
 		decodedMap[k] = []string{v}
 	}
 
-	text := decodedMap["text"]
-	text = strings.Split(strings.ToUpper(text[0]), " ")
-
-	cmd, ok := cmds[text[0]]
-	if !ok { // If there is no cmd mapped, assume it's a ticker and get quotes
-		getQuotes(decodedMap["text"][0], decodedMap)
-	} else {
-		cmd.funcPtr(text, decodedMap)
-	}
+	stocktopus.Process(decodedMap)
 }

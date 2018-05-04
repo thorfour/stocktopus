@@ -108,10 +108,7 @@ func rtmStart(tok string) (socket string, id string, err error) {
 func (s *RTMClient) Receive() (string, error) {
 
 	checkMsg := func() error {
-		if err := websocket.JSON.Receive(s.ws, &s.msg); err != nil {
-			return err
-		}
-		return nil
+		return websocket.JSON.Receive(s.ws, &s.msg)
 	}
 
 	var err error

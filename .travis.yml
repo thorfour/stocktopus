@@ -1,13 +1,12 @@
 go_import_path: github.com/thourfor/stocktopus
 
-install:
-- go get -t -d github.com/thorfour/stocktopus/...
-
 language: go
 
 go:
-- 1.8
+- "1.10.x"
 
-script:
- - make all && make clean
- - go test -v ./...
+install: 
+ - go get -t -v ./...
+
+before_script:
+ - go vet ./...
