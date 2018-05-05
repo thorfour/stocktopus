@@ -2,10 +2,10 @@ package stocktopus
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 
@@ -18,7 +18,7 @@ import (
 	"github.com/thorfour/stocktopus/pkg/cfg"
 )
 
-type cmdFunc func([]string, url.Values)
+type cmdFunc func([]string, url.Values) (string, error)
 
 type cmdInfo struct {
 	funcPtr cmdFunc // Function pointer to the function to execute
@@ -67,23 +67,25 @@ func init() {
 type stockFunc func(string) (string, error)
 
 // Process url string to provide stocktpus functionality
-func Process(args url.Values) {
-	text := args["text"]
+func Process(args url.Values) (string, error) {
+	text, ok := args["text"]
+	if !ok {
+		return "", errors.New("Bad request")
+	}
+
 	text = strings.Split(strings.ToUpper(text[0]), " ")
 	cmd, ok := cmds[text[0]]
 	if !ok {
-		getQuotes(args["text"][0], args)
-	} else {
-		cmd.funcPtr(text, args)
+		return getQuotes(args["text"][0], args)
 	}
+	return cmd.funcPtr(text, args)
 }
 
 // Add ticker(s) to a watch list
-func add(text []string, decodedMap url.Values) {
+func add(text []string, decodedMap url.Values) (string, error) {
 
 	if len(text) < 2 { // Must be something to add to watch list
-		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
-		return
+		return "", errors.New("Error: Invalid number of arguments")
 	}
 
 	// Chop off addToList arg
@@ -111,15 +113,15 @@ func add(text []string, decodedMap url.Values) {
 
 	_, err := rClient.SAdd(key, members...).Result()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("Error addtolist: %v", err))
-		return
+		return "", errors.New(fmt.Sprintf("Error addtolist: %v", err))
 	}
 
-	fmt.Fprintln(os.Stderr, "Added")
+	// Not an error but message of Added should be supressed
+	return "", errors.New("Added")
 }
 
 // Print out a watchlist
-func print(text []string, decodedMap url.Values) {
+func print(text []string, decodedMap url.Values) (string, error) {
 
 	// User and token to be used as watch list lookup
 	user := decodedMap["user_id"]
@@ -133,8 +135,7 @@ func print(text []string, decodedMap url.Values) {
 		user = []string{strings.ToLower(text[0][1:]), decodedMap["team_id"][0]}
 		text = text[1:] // Remove list name
 	} else if len(text) >= 1 {
-		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
-		return
+		return "", errors.New("Error: Invalid number arguments")
 	}
 
 	key := fmt.Sprintf("%v%v", token, user)
@@ -144,15 +145,14 @@ func print(text []string, decodedMap url.Values) {
 	// Get and print watch list
 	list, err := rClient.SMembers(key).Result()
 	if err != nil || len(list) == 0 {
-		fmt.Fprintln(os.Stderr, "Error: No List")
-		return
+		return "", errors.New("Error: No List")
 	}
 
-	getQuotes(strings.Join(list, " "), decodedMap)
+	return getQuotes(strings.Join(list, " "), decodedMap)
 }
 
 // Remove a single ticker from a watch list
-func remove(text []string, decodedMap url.Values) {
+func remove(text []string, decodedMap url.Values) (string, error) {
 
 	// Chop off printList arg
 	text = text[1:]
@@ -180,15 +180,14 @@ func remove(text []string, decodedMap url.Values) {
 	// Remove from watch list
 	_, err := rClient.SRem(key, members...).Result()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("Error rmfromlist: %v", err))
-		return
+		return "", errors.New(fmt.Sprintf("Error rmfromlist: %v", err))
 	}
 
-	fmt.Fprintln(os.Stderr, "Removed")
+	return "", errors.New("Removed")
 }
 
 // Delete a watch list. Deletes the whole file instead of clearing
-func clearList(text []string, decodedMap url.Values) {
+func clearList(text []string, decodedMap url.Values) (string, error) {
 
 	user := decodedMap["user_id"]
 	token := decodedMap["token"]
@@ -201,8 +200,7 @@ func clearList(text []string, decodedMap url.Values) {
 		user = []string{strings.ToLower(text[0][1:]), decodedMap["team_id"][0]}
 		text = text[1:] // Remove list name
 	} else if len(text) >= 1 {
-		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
-		return
+		return "", errors.New("Error: Invalid number arguments")
 	}
 
 	key := fmt.Sprintf("%v%v", token, user)
@@ -211,21 +209,21 @@ func clearList(text []string, decodedMap url.Values) {
 
 	_, err := rClient.Del(key).Result()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("Error clear: %v", err))
+		return "", errors.New(fmt.Sprintf("Error clear: %v", err))
 	}
 
-	fmt.Fprintln(os.Stderr, "Removed")
+	return "", errors.New("Removed")
 }
 
 // Prints out help information about supported commands
-func printHelp(text []string, decodedMap url.Values) {
+func printHelp(text []string, decodedMap url.Values) (string, error) {
 
 	var out string
 	for _, val := range cmds {
 		out = fmt.Sprintf("%v\n%v", out, val.helpStr)
 	}
 
-	fmt.Fprintln(os.Stderr, out)
+	return "", errors.New(out)
 }
 
 // text is expected to be a list of tickers separated by spaces
@@ -240,21 +238,19 @@ func getMultiQuote(text string) (iextypes.Batch, error) {
 }
 
 // Default functionality of grabbing stock quote(s)
-func getQuotes(text string, decodedMap url.Values) {
+func getQuotes(text string, decodedMap url.Values) (string, error) {
 	var chartFunc stockFunc
 	var quote string
 
 	// Pull the quote
 	info, err := getMultiQuote(text)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error: ", err)
-		return
+		return "", fmt.Errorf("Error: %v", err)
 	}
 
 	// Nothing was returned
 	if len(info) == 0 {
-		fmt.Fprintln(os.Stderr, "There's nothing here")
-		return
+		return "", errors.New("There's nothing here")
 	}
 
 	rows := make([][]interface{}, 0, len(info))
@@ -262,8 +258,7 @@ func getQuotes(text string, decodedMap url.Values) {
 	for ticker := range info {
 		quote, err := info.Quote(ticker)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Unable to get quote for ", ticker)
-			return
+			return "", fmt.Errorf("Unable to get quote for %s", ticker)
 		}
 		rows = append(rows, []interface{}{ticker, quote.IexRealtimePrice, quote.Change, fmt.Sprintf("%0.3f", (100 * quote.ChangePercent))})
 		cumsum += (100 * quote.ChangePercent)
@@ -289,24 +284,20 @@ func getQuotes(text string, decodedMap url.Values) {
 		// Pull a stock chart
 		chartURL, err := chartFunc(text)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Error: ", err)
-			return
+			return "", fmt.Errorf("Error: %v", err)
 		}
 
-		// Dump the chart link to stdio
 		quote = fmt.Sprintf("%v\n%v", quote, chartURL)
 	}
 
-	// Dump the quote to stdio
-	fmt.Println(quote)
+	return quote, nil
 }
 
 // Print out a company profile
-func getInfo(text []string, decodedMap url.Values) {
+func getInfo(text []string, decodedMap url.Values) (string, error) {
 
 	if len(text) != 2 {
-		fmt.Fprintln(os.Stderr, "Error: Invalid number of arguments")
-		return
+		return "", errors.New("Error: Invalid number of arguments")
 	}
 
 	// Chop off arg
@@ -314,11 +305,10 @@ func getInfo(text []string, decodedMap url.Values) {
 
 	resp, err := getStockInfo(text[0])
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error: ", err)
-		return
+		return "", fmt.Errorf("Error: %v", err)
 	}
 
-	fmt.Println(resp)
+	return resp, nil
 }
 
 //--------------------
@@ -336,11 +326,10 @@ type holding struct {
 	Shares uint64  // number of shares being held
 }
 
-func depositPlay(text []string, decodedMap url.Values) {
+func depositPlay(text []string, decodedMap url.Values) (string, error) {
 
 	if len(text) != 2 { // Must have an amount to add
-		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
-		return
+		return "", errors.New("Error: Invalid number arguments")
 	}
 
 	// Chop off deposit arg
@@ -349,8 +338,7 @@ func depositPlay(text []string, decodedMap url.Values) {
 	// Parse amount to add to account
 	amt, err := strconv.ParseUint(text[0], 10, 64)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("Invalid amount: %v", err))
-		return
+		return "", errors.New(fmt.Sprintf("Invalid amount: %v", err))
 	}
 
 	// User and token to be used as lookup
@@ -368,8 +356,7 @@ func depositPlay(text []string, decodedMap url.Values) {
 		newAcct.Holdings = make(map[string]holding)
 		newAcct.Balance = float64(amt)
 		saveAccount(client, newAcct, key)
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("New Balance: %v", newAcct.Balance))
-		return
+		return "", errors.New(fmt.Sprintf("New Balance: %v", newAcct.Balance))
 	}
 
 	// Add amount to balance
@@ -377,19 +364,18 @@ func depositPlay(text []string, decodedMap url.Values) {
 
 	err = saveAccount(client, acct, key)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("Unable to save account: %v", err))
+		return "", errors.New(fmt.Sprintf("Unable to save account: %v", err))
 	}
 
 	// Respond with the new balance
 	resp := fmt.Sprintf("New Balance: %v", acct.Balance)
-	fmt.Fprintln(os.Stderr, resp)
+	return "", errors.New(resp)
 }
 
-func resetPlay(text []string, decodedMap url.Values) {
+func resetPlay(text []string, decodedMap url.Values) (string, error) {
 
 	if len(text) != 1 { // Only reset accepted
-		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
-		return
+		return "", errors.New("Error: Invalid number arguments")
 	}
 
 	// User and token to be used as lookup
@@ -403,14 +389,13 @@ func resetPlay(text []string, decodedMap url.Values) {
 	newAcct.Holdings = make(map[string]holding)
 	newAcct.Balance = float64(0)
 	saveAccount(client, newAcct, key)
-	fmt.Fprintln(os.Stderr, fmt.Sprintf("New Balance: %v", newAcct.Balance))
+	return "", errors.New(fmt.Sprintf("New Balance: %v", newAcct.Balance))
 }
 
-func portfolioPlay(text []string, decodedMap url.Values) {
+func portfolioPlay(text []string, decodedMap url.Values) (string, error) {
 
 	if len(text) != 1 { // Only portfolio accepted
-		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
-		return
+		return "", errors.New("Error: Invalid number arguments")
 	}
 
 	// User and token to be used as lookup
@@ -422,8 +407,7 @@ func portfolioPlay(text []string, decodedMap url.Values) {
 
 	acct, err := loadAccount(client, key)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Unable to load account")
-		return
+		return "", errors.New("Unable to load account")
 	}
 
 	total := float64(0)
@@ -438,16 +422,14 @@ func portfolioPlay(text []string, decodedMap url.Values) {
 		// Pull the quote
 		info, err := getMultiQuote(strings.Join(list, " "))
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "Unable to get quotes")
-			return
+			return "", errors.New("Unable to get quotes")
 		}
 
 		rows := make([][]interface{}, 0, len(acct.Holdings))
 		for ticker := range info {
 			quote, err := info.Quote(ticker)
 			if err != nil {
-				fmt.Fprintln(os.Stderr, "Unable to get quote for ", ticker)
-				return
+				return "", fmt.Errorf("Unable to get quote for %s", ticker)
 			}
 			h := acct.Holdings[ticker]
 			total += float64(h.Shares) * quote.IexRealtimePrice
@@ -466,18 +448,17 @@ func portfolioPlay(text []string, decodedMap url.Values) {
 		table := t.Render("simple")
 		summary := fmt.Sprintf("Portfolio Value: $%0.2f\nBalance: $%0.2f\nTotal: $%0.2f", total, acct.Balance, total+acct.Balance)
 		resp := fmt.Sprintf("```%v\n%v```", table, summary)
-		fmt.Print(resp)
+		return resp, nil
 	} else {
 		s := fmt.Sprintf("Balance: $%0.2f", acct.Balance)
-		fmt.Print(s)
+		return s, nil
 	}
 }
 
-func buyPlay(text []string, decodedMap url.Values) {
+func buyPlay(text []string, decodedMap url.Values) (string, error) {
 
 	if len(text) != 3 { // BUY TICKER SHARES
-		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
-		return
+		return "", errors.New("Error: Invalid number arguments")
 	}
 
 	// Chop off buy arg
@@ -486,16 +467,14 @@ func buyPlay(text []string, decodedMap url.Values) {
 	// Parse number of shares to purchase
 	amt, err := strconv.ParseUint(text[1], 10, 64)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("Invalid amount: %v", err))
-		return
+		return "", errors.New(fmt.Sprintf("Invalid amount: %v", err))
 	}
 
 	// lookup ticker price
 	ticker := text[0]
 	price, err := iex.Price(ticker)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("Unable to get price: %v", err))
-		return
+		return "", errors.New(fmt.Sprintf("Unable to get price: %v", err))
 	}
 
 	// User and token to be used as lookup
@@ -507,14 +486,12 @@ func buyPlay(text []string, decodedMap url.Values) {
 
 	acct, err := loadAccount(client, key)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Unable to load account")
-		return
+		return "", errors.New("Unable to load account")
 	}
 
 	// check if enough money in account
 	if acct.Balance < (price * float64(amt)) {
-		fmt.Fprintln(os.Stderr, "Insufficient funds")
-		return
+		return "", errors.New("Insufficient funds")
 	}
 
 	// add to account
@@ -530,18 +507,16 @@ func buyPlay(text []string, decodedMap url.Values) {
 	// write account
 	err = saveAccount(client, acct, key)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("Unable to save account: %v", err))
-		return
+		return "", errors.New(fmt.Sprintf("Unable to save account: %v", err))
 	}
 
-	fmt.Fprintln(os.Stderr, "Done")
+	return "", errors.New("Done")
 }
 
-func sellPlay(text []string, decodedMap url.Values) {
+func sellPlay(text []string, decodedMap url.Values) (string, error) {
 
 	if len(text) != 3 { // SELL TICKER SHARES
-		fmt.Fprintln(os.Stderr, "Error: Invalid number arguments")
-		return
+		return "", errors.New("Error: Invalid number arguments")
 	}
 
 	// Chop off buy arg
@@ -550,16 +525,14 @@ func sellPlay(text []string, decodedMap url.Values) {
 	// Parse number of shares to purchase
 	amt, err := strconv.ParseUint(text[1], 10, 64)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("Invalid amount: %v", err))
-		return
+		return "", errors.New(fmt.Sprintf("Invalid amount: %v", err))
 	}
 
 	// lookup ticker price
 	ticker := text[0]
 	price, err := iex.Price(ticker)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("Unable to get price: %v", err))
-		return
+		return "", errors.New(fmt.Sprintf("Unable to get price: %v", err))
 	}
 
 	// User and token to be used as lookup
@@ -571,14 +544,12 @@ func sellPlay(text []string, decodedMap url.Values) {
 
 	acct, err := loadAccount(client, key)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Unable to load account")
-		return
+		return "", errors.New("Unable to load account")
 	}
 
 	h, ok := acct.Holdings[ticker]
 	if !ok || h.Shares < amt {
-		fmt.Fprintln(os.Stderr, "Not enough shares")
-		return
+		return "", errors.New("Not enough shares")
 	}
 
 	// remove from account and credit account for the sale
@@ -594,11 +565,10 @@ func sellPlay(text []string, decodedMap url.Values) {
 	// write account
 	err = saveAccount(client, acct, key)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, fmt.Sprintf("Unable to save account: %v", err))
-		return
+		return "", errors.New(fmt.Sprintf("Unable to save account: %v", err))
 	}
 
-	fmt.Fprintln(os.Stderr, "Done")
+	return "", errors.New("Done")
 }
 
 func saveAccount(client *redis.Client, acct *account, key string) error {
@@ -641,16 +611,16 @@ func connectRedis() *redis.Client {
 }
 
 // getNews will print news from requested company
-func getNews(text []string, decodedMap url.Values) {
+func getNews(text []string, decodedMap url.Values) (string, error) {
 	if len(text) != 2 {
-		fmt.Fprintln(os.Stderr, "Error: Invalid number of arguments")
+		return "", errors.New("Error: Invalid number of arguments")
 	}
 	// Chop off news arg
 	text = text[1:]
 
 	latestNews, err := iex.News(text[0])
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "Error: No news is good news right?")
+		return "", errors.New("Error: No news is good news right?")
 	}
 
 	// Try and pretty print them
@@ -659,7 +629,7 @@ func getNews(text []string, decodedMap url.Values) {
 		printNews = fmt.Sprintf("%s%s\n\n", printNews, n.Summary)
 	}
 
-	fmt.Println(printNews)
+	return printNews, nil
 }
 
 // getStockInfo returns a company information paragraph from reuters

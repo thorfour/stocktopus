@@ -6,34 +6,54 @@ import (
 )
 
 func TestGetQuotesDelimited(t *testing.T) {
-	getQuotes("brk.a", nil)
+	_, err := getQuotes("brk.a", nil)
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestGetQuotes(t *testing.T) {
-	getQuotes("tsla amd wdc intc gpro f goog", nil)
+	_, err := getQuotes("tsla amd wdc intc gpro f goog", nil)
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestGetQuotesSingle(t *testing.T) {
-	getQuotes("tsla", nil)
+	_, err := getQuotes("tsla", nil)
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestGetQuotesSingleWithCurrency(t *testing.T) {
-	getQuotes("tsla btcusd amd", nil)
+	_, err := getQuotes("tsla btcusd amd", nil)
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestGetQuotesBad(t *testing.T) {
-	fmt.Println("Middle -----------------------------------------")
-	getQuotes("tsla osghoevcmi amd", nil)
-	fmt.Println("Only-----------------------------------------")
-	getQuotes("osghoevcmi", nil)
-	fmt.Println("Start-----------------------------------------")
-	getQuotes("osghoevcmi amd tsla", nil)
-	fmt.Println("End-----------------------------------------")
-	getQuotes("tsla amd aorghreqcm", nil)
-	fmt.Println("Two-to-one-------------------------------------")
-	getQuotes("amd aorghreqcm", nil)
+	if _, err := getQuotes("tsla osghoevcmi amd", nil); err != nil {
+		t.Error(err)
+	}
+	if q, err := getQuotes("osghoevcmi", nil); err == nil {
+		fmt.Println(q)
+		t.Error("expected failure")
+	}
+	if _, err := getQuotes("osghoevcmi amd tsla", nil); err != nil {
+		t.Error("expected failure")
+	}
+	if _, err := getQuotes("tsla amd aorghreqcm", nil); err != nil {
+		t.Error("expected failure")
+	}
+	if _, err := getQuotes("amd aorghreqcm", nil); err != nil {
+		t.Error("expected failure")
+	}
 }
 
 func TestGetNews(t *testing.T) {
-	getNews([]string{"news", "amd"}, nil)
+	if _, err := getNews([]string{"news", "amd"}, nil); err != nil {
+		t.Error(err)
+	}
 }

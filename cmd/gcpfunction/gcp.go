@@ -30,5 +30,11 @@ func main() {
 		decodedMap[k] = []string{v}
 	}
 
-	stocktopus.Process(decodedMap)
+	msg, err := stocktopus.Process(decodedMap)
+	if err != nil {
+		fmt.Fprint(os.Stderr, err.Error())
+		return
+	}
+
+	fmt.Println(msg)
 }
