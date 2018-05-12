@@ -13,3 +13,9 @@ install:
 
 before_script:
  - go vet ./...
+
+deploy:
+    provider: script
+    script: bash build/docker/docker_push.sh
+    on:
+      branch: master
