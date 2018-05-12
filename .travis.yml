@@ -1,12 +1,15 @@
-go_import_path: github.com/thourfor/stocktopus
+sudo: required
+
+services:
+ - docker
 
 language: go
 
 go:
-- "1.10.x"
+ - "1.10.x"
 
-install: 
- - go get -t -v ./...
+install:
+ - go get -t ./...
 
 before_script:
  - go vet ./...
