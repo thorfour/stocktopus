@@ -1,6 +1,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/thorfour/stocktopus)](https://goreportcard.com/report/github.com/thorfour/stocktopus)
 [![WTFPL licensed](https://img.shields.io/badge/license-WTFPL-blue.svg)](https://github.com/thorfour/stocktopus/blob/master/LICENSE)
 [![Build Status](https://travis-ci.org/thorfour/stocktopus.svg?branch=master)](https://travis-ci.org/thorfour/stocktopus)
+[![Docker Repository on Quay](https://quay.io/repository/thorfour/stocktopus/status "Docker Repository on Quay")](https://quay.io/repository/thorfour/stocktopus)
 
 <a href="https://slack.com/oauth/authorize?scope=commands&client_id=15348769670.121517816146"><img alt="Add to Slack" height="40" width="139" src="https://platform.slack-edge.com/img/add_to_slack.png" srcset="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x" /></a>
 
