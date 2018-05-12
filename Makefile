@@ -31,7 +31,7 @@ docker: setup
 	CGO_ENABLED=0 GOOS=linux go build -o ./bin/docker/server ./cmd/server
 	cp /etc/ssl/certs/ca-certificates.crt ./bin/docker/
 	cp ./build/docker/Dockerfile ./bin/docker/
-	docker build ./bin/docker/
+	docker build ./bin/docker/ -t quay.io/thorfour/stocktopus
 
 clean:
 	rm -r ./bin
