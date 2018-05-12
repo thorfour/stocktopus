@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+	"time"
 )
 
 func TestSimpleQuote(t *testing.T) {
@@ -17,6 +18,8 @@ func TestSimpleQuote(t *testing.T) {
 	form := url.Values{
 		"text": {"amd"},
 	}
+
+	time.Sleep(time.Second)
 
 	body := bytes.NewBufferString(form.Encode())
 	resp, err := http.Post("http://localhost:8088/v1", "application/x-www-form-urlencoded", body)
