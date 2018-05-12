@@ -1,22 +1,28 @@
 package main
 
 import (
+	"context"
+	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
 	"net/http"
 
+	"golang.org/x/crypto/acme/autocert"
+
+	"github.com/thorfour/stocktopus/pkg/cfg"
 	"github.com/thorfour/stocktopus/pkg/stocktopus"
 )
 
 const (
 	ephemeral = "ephemeral"
 	inchannel = "in_channel"
+	dataDir   = "."
 )
 
 var (
-	port  = flag.Int("p", 8088, "port to serve on")
+	port  = flag.Int("p", 443, "port to serve on")
 	debug = flag.Bool("d", false, "turn TLS off")
 )
 
@@ -33,12 +39,34 @@ func main() {
 }
 
 func run(p int, d bool) {
-	http.HandleFunc("/v1", handler)
 
 	if d {
+		http.HandleFunc("/v1", handler)
 		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", p), nil))
 	} else {
-		log.Fatal(http.ListenAndServeTLS(fmt.Sprintf(":%v", p), "cert.pem", "key.pem", nil))
+		mux := &http.ServeMux{}
+		mux.HandleFunc("/v1", handler)
+		hostPolicy := func(ctx context.Context, host string) error {
+			if host == cfg.AllowedHost {
+				return nil
+			}
+			return fmt.Errorf("acme/autocert: only %s allowed", cfg.AllowedHost)
+		}
+		m := &autocert.Manager{
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: hostPolicy,
+			Cache:      autocert.DirCache(dataDir),
+			Email:      cfg.SupportEmail,
+		}
+		srv := &http.Server{
+			Handler: mux,
+			Addr:    fmt.Sprintf(":%v", p),
+			TLSConfig: &tls.Config{
+				GetCertificate: m.GetCertificate,
+			},
+		}
+		go http.ListenAndServe(":80", m.HTTPHandler(nil))
+		log.Fatal(srv.ListenAndServeTLS("", ""))
 	}
 }
 
@@ -73,4 +101,12 @@ func newReponse(resp http.ResponseWriter, message string, err error) {
 
 	resp.Write(b)
 	return
+}
+
+func hostPolicy(ctx context.Context, host string) error {
+	if host == cfg.AllowedHost {
+		return nil
+	}
+
+	return fmt.Errorf("acme/autocert: only %s hist is allowed", cfg.AllowedHost)
 }
