@@ -99,6 +99,7 @@ func newReponse(resp http.ResponseWriter, message string, err error) {
 		return
 	}
 
+	resp.Header().Set("Content-Type", "application/json")
 	resp.Write(b)
 	return
 }
