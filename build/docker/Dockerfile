@@ -1,6 +1,6 @@
 FROM scratch
 MAINTAINER support@stocktopus.io
 EXPOSE 443
-ADD ca-certificates.crt /etc/ssl/certs
-ADD server /
+COPY ca-certificates.crt /etc/ssl/certs/
+COPY server /
 CMD ["/server"]
