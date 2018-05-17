@@ -52,6 +52,7 @@ upload the `stocktopus.zip` file in `bin/gcp` as a cloud function
 ### Docker
 
 (optionally can pull stocktopus from quay.io using `docker pull quay.io/thorfour/stocktopus:v1.0.0`)
+
 `docker run -d -p 80:80 -p 443:443 -e REDISADDR=<redis endpoint> -e REDISPW=<redis password> quay.io/thorfour/stocktopus:v1.0.0`
 
 ## Usage
