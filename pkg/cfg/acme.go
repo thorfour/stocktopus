@@ -1,8 +1,15 @@
 package cfg
 
-const (
+import "flag"
+
+var (
 	// AllowedHost for the ACME protocol for TLS certs
-	AllowedHost = "api.stocktopus.io"
+	AllowedHost string
 	// SupportEmail email for ACME provider to contact for TLS problems
-	SupportEmail = "support@stocktopus.io"
+	SupportEmail string
 )
+
+func init() {
+	flag.StringVar(&AllowedHost, "host", "api.stocktopus.io", "ACME allowed FQDN")
+	flag.StringVar(&SupportEmail, "email", "support@stocktopus.io", "ACME support email")
+}
