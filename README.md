@@ -49,6 +49,11 @@ upload the `stocktopus.zip` file in `/bin/aws` as a lambda function
 or for gcp
 upload the `stocktopus.zip` file in `bin/gcp` as a cloud function
 
+### Docker
+
+(optionally can pull stocktopus from quay.io using `docker pull quay.io/thorfour/stocktopus:v1.0.0`)
+`docker run -d -p 80:80 -p 443:443 -e REDISADDR=<redis endpoint> -e REDISPW=<redis password> quay.io/thorfour/stocktopus:v1.0.0`
+
 ## Usage
 The RTM bot will look for any direct messages sent to it and try to parse them as tickers, and respond with stock quotes.
 > @stockbotname GOOGL
