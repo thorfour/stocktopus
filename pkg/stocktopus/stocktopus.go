@@ -260,7 +260,7 @@ func getQuotes(text string, decodedMap url.Values) (string, error) {
 		if err != nil {
 			return "", fmt.Errorf("Unable to get quote for %s", ticker)
 		}
-		rows = append(rows, []interface{}{ticker, quote.IexRealtimePrice, quote.Change, fmt.Sprintf("%0.3f", (100 * quote.ChangePercent))})
+		rows = append(rows, []interface{}{ticker, quote.LatestPrice, quote.Change, fmt.Sprintf("%0.3f", (100 * quote.ChangePercent))})
 		cumsum += (100 * quote.ChangePercent)
 	}
 	rows = append(rows, []interface{}{"Avg.", "---", "---", fmt.Sprintf("%0.3f%%", cumsum/float64(len(rows)))})
@@ -432,11 +432,11 @@ func portfolioPlay(text []string, decodedMap url.Values) (string, error) {
 				return "", fmt.Errorf("Unable to get quote for %s", ticker)
 			}
 			h := acct.Holdings[ticker]
-			total += float64(h.Shares) * quote.IexRealtimePrice
-			delta := float64(h.Shares) * (quote.IexRealtimePrice - h.Strike)
+			total += float64(h.Shares) * quote.LatestPrice
+			delta := float64(h.Shares) * (quote.LatestPrice - h.Strike)
 			totalChange += delta
 			deltaStr := fmt.Sprintf("%0.2f", delta)
-			rows = append(rows, []interface{}{ticker, h.Shares, h.Strike, quote.IexRealtimePrice, deltaStr})
+			rows = append(rows, []interface{}{ticker, h.Shares, h.Strike, quote.LatestPrice, deltaStr})
 		}
 
 		rows = append(rows, []interface{}{"Total", "---", "---", "---", fmt.Sprintf("%0.2f", totalChange)})
