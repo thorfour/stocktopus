@@ -89,8 +89,4 @@ Stocktopus does not collect any personal identifying information. It does not st
 
 If you have questions comments or concerns about the app please email help@stocktopus.io
 
-## Donations
-
-If you like the app and would like to donate to help us pay for server costs we accept Bitcoin `18Q4Nnyc3AxrHis5ATioWSZ6hn5SqyzVyj`
-
 #### Special Thanks to /u/shirokarasu over at r/DrawForMe for creating the icon
