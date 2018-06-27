@@ -35,6 +35,7 @@ type response struct {
 func main() {
 	flag.Parse()
 	log.Printf("Starting server on port %v", *port)
+	log.Printf("Storing certs in %s", *certCache)
 	run(*port, *debug, *certCache)
 }
 
