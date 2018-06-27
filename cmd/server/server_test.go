@@ -13,7 +13,7 @@ import (
 func TestSimpleQuote(t *testing.T) {
 
 	// Run a debug server
-	go run(8088, true)
+	go run(8088, true, ".")
 
 	form := url.Values{
 		"text": {"amd"},

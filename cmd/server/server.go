@@ -18,12 +18,12 @@ import (
 const (
 	ephemeral = "ephemeral"
 	inchannel = "in_channel"
-	dataDir   = "."
 )
 
 var (
-	port  = flag.Int("p", 443, "port to serve on")
-	debug = flag.Bool("d", false, "turn TLS off")
+	port      = flag.Int("p", 443, "port to serve on")
+	debug     = flag.Bool("d", false, "turn TLS off")
+	certCache = flag.String("c", "/cert", "location to store certs")
 )
 
 // response is the json struct for a slack response
@@ -35,10 +35,10 @@ type response struct {
 func main() {
 	flag.Parse()
 	log.Printf("Starting server on port %v", *port)
-	run(*port, *debug)
+	run(*port, *debug, *certCache)
 }
 
-func run(p int, d bool) {
+func run(p int, d bool, certDir string) {
 
 	if d {
 		http.HandleFunc("/v1", handler)
@@ -55,7 +55,7 @@ func run(p int, d bool) {
 		m := &autocert.Manager{
 			Prompt:     autocert.AcceptTOS,
 			HostPolicy: hostPolicy,
-			Cache:      autocert.DirCache(dataDir),
+			Cache:      autocert.DirCache(certDir),
 			Email:      cfg.SupportEmail,
 		}
 		srv := &http.Server{
