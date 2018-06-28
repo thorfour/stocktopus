@@ -4,8 +4,13 @@
 [[projects]]
   name = "github.com/bndr/gotabulate"
   packages = ["."]
-  revision = "94ff52dbe671866d4f5cd3463ecdad8ec550e578"
-  version = "v1.1.2"
+  revision = "bc555436bfd5d4e93a2dd35b462ce37e067afdda"
+
+[[projects]]
+  name = "github.com/mattn/go-runewidth"
+  packages = ["."]
+  revision = "9e777a8366cce605130a531d2cd6363d07ad7317"
+  version = "v0.0.2"
 
 [[projects]]
   branch = "master"
@@ -52,6 +57,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "61e3a45c3da497a888c2e04f3a6fa6eeb00ec7cee1a1c8561178d43da149cb8d"
+  inputs-digest = "c64252f7f553d0187c30e5ea985b50af1cc61800047470c1e37362a2713fb9a3"
   solver-name = "gps-cdcl"
   solver-version = 1
