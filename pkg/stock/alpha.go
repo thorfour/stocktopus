@@ -58,6 +58,8 @@ func (w *AlphaWrapper) BatchQuotes(tickers []string) ([]*Quote, error) {
 	}
 
 	wg.Wait()
+	close(resp)
+	close(errCh)
 
 	// check for errors
 	if len(errCh) != 0 {
