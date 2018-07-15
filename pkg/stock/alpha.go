@@ -22,7 +22,7 @@ func (w *AlphaWrapper) Price(ticker string) (float64, error) {
 		return 0, err
 	}
 
-	return series[0].Close, nil
+	return series[len(series)-1].Close, nil
 }
 
 // BatchQuotes returns a slice of quotes for the given tickers
@@ -46,9 +46,9 @@ func (w *AlphaWrapper) BatchQuotes(tickers []string) ([]*Quote, error) {
 			// convert the series into a quote object
 			q := &Quote{
 				Ticker:        symbol,
-				LatestPrice:   series[0].Close,
+				LatestPrice:   series[len(series)-1].Close,
 				Change:        series[len(series)-1].Close - series[0].Close,
-				ChangePercent: ((series[0].Close - series[len(series)-1].Close) / series[0].Close) * 100,
+				ChangePercent: ((series[len(series)-1].Close - series[0].Close) / series[len(series)-1].Close), // NOTE: return as a decimal percentage i.e 0.10 = 10%
 			}
 
 			// return the quotes

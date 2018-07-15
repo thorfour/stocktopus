@@ -255,7 +255,7 @@ func getQuotes(text string, decodedMap url.Values) (string, error) {
 	rows := make([][]interface{}, 0, len(info))
 	cumsum := float64(0)
 	for _, quote := range info {
-		rows = append(rows, []interface{}{quote.Ticker, quote.LatestPrice, quote.Change, fmt.Sprintf("%0.3f", (100 * quote.ChangePercent))})
+		rows = append(rows, []interface{}{quote.Ticker, quote.LatestPrice, fmt.Sprintf("%0.2f", quote.Change), fmt.Sprintf("%0.3f", (100 * quote.ChangePercent))})
 		cumsum += (100 * quote.ChangePercent)
 	}
 	rows = append(rows, []interface{}{"Avg.", "---", "---", fmt.Sprintf("%0.3f%%", cumsum/float64(len(rows)))})
