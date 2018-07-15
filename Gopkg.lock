@@ -7,56 +7,50 @@
   revision = "bc555436bfd5d4e93a2dd35b462ce37e067afdda"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/cmckee-dev/go-alpha-vantage"
+  packages = ["."]
+  revision = "93e1d00e7e7c80e876492edbfc1a808c0b0af638"
+
+[[projects]]
   name = "github.com/mattn/go-runewidth"
   packages = ["."]
   revision = "9e777a8366cce605130a531d2cd6363d07ad7317"
   version = "v0.0.2"
 
 [[projects]]
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/thorfour/iex"
-  packages = [
-    "pkg/api",
-    "pkg/endpoint",
-    "pkg/types"
-  ]
+  packages = ["pkg/api","pkg/endpoint","pkg/types"]
   revision = "de46a67e27e4d9b5a9f60424b454e2afbe1c5bf0"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
-  packages = [
-    "acme",
-    "acme/autocert"
-  ]
+  packages = ["acme","acme/autocert"]
   revision = "a49355c7e3f8fe157a85be2f77e6e269a0f89602"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/net"
-  packages = [
-    "html",
-    "html/atom",
-    "websocket"
-  ]
+  packages = ["html","html/atom","websocket"]
   revision = "afe8f62b1d6bbd81f31868121a50b06d8188e1f9"
 
 [[projects]]
   name = "gopkg.in/redis.v5"
-  packages = [
-    ".",
-    "internal",
-    "internal/consistenthash",
-    "internal/hashtag",
-    "internal/pool",
-    "internal/proto"
-  ]
+  packages = [".","internal","internal/consistenthash","internal/hashtag","internal/pool","internal/proto"]
   revision = "a16aeec10ff407b1e7be6dd35797ccf5426ef0f0"
   version = "v5.2.9"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "c64252f7f553d0187c30e5ea985b50af1cc61800047470c1e37362a2713fb9a3"
+  inputs-digest = "0bda1c7654e0181997f4949de96279946a155b363f01a11549ffadbd9a904dec"
   solver-name = "gps-cdcl"
   solver-version = 1
