@@ -57,3 +57,11 @@ func TestGetNews(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestQuoteExchange(t *testing.T) {
+	t.Skip("This test is not supported on IEX")
+	_, err := getQuotes("TSE:ARE", nil)
+	if err != nil {
+		t.Error(err)
+	}
+}

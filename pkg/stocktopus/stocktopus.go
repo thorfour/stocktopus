@@ -13,9 +13,8 @@ import (
 	redis "gopkg.in/redis.v5"
 
 	"github.com/bndr/gotabulate"
-	iex "github.com/thorfour/iex/pkg/api"
-	iextypes "github.com/thorfour/iex/pkg/types"
 	"github.com/thorfour/stocktopus/pkg/cfg"
+	"github.com/thorfour/stocktopus/pkg/stock"
 )
 
 type cmdFunc func([]string, url.Values) (string, error)
@@ -227,9 +226,9 @@ func printHelp(text []string, decodedMap url.Values) (string, error) {
 }
 
 // text is expected to be a list of tickers separated by spaces
-func getMultiQuote(text string) (iextypes.Batch, error) {
+func getMultiQuote(text string) ([]*stock.Quote, error) {
 	tickers := strings.Split(text, " ")
-	batch, err := iex.BatchQuotes(tickers)
+	batch, err := stockInterface.BatchQuotes(tickers)
 	if err != nil {
 		return nil, err
 	}
@@ -255,12 +254,8 @@ func getQuotes(text string, decodedMap url.Values) (string, error) {
 
 	rows := make([][]interface{}, 0, len(info))
 	cumsum := float64(0)
-	for ticker := range info {
-		quote, err := info.Quote(ticker)
-		if err != nil {
-			return "", fmt.Errorf("Unable to get quote for %s", ticker)
-		}
-		rows = append(rows, []interface{}{ticker, quote.LatestPrice, quote.Change, fmt.Sprintf("%0.3f", (100 * quote.ChangePercent))})
+	for _, quote := range info {
+		rows = append(rows, []interface{}{quote.Ticker, quote.LatestPrice, fmt.Sprintf("%0.2f", quote.Change), fmt.Sprintf("%0.3f", (100 * quote.ChangePercent))})
 		cumsum += (100 * quote.ChangePercent)
 	}
 	rows = append(rows, []interface{}{"Avg.", "---", "---", fmt.Sprintf("%0.3f%%", cumsum/float64(len(rows)))})
@@ -426,17 +421,13 @@ func portfolioPlay(text []string, decodedMap url.Values) (string, error) {
 		}
 
 		rows := make([][]interface{}, 0, len(acct.Holdings))
-		for ticker := range info {
-			quote, err := info.Quote(ticker)
-			if err != nil {
-				return "", fmt.Errorf("Unable to get quote for %s", ticker)
-			}
-			h := acct.Holdings[ticker]
+		for _, quote := range info {
+			h := acct.Holdings[quote.Ticker]
 			total += float64(h.Shares) * quote.LatestPrice
 			delta := float64(h.Shares) * (quote.LatestPrice - h.Strike)
 			totalChange += delta
 			deltaStr := fmt.Sprintf("%0.2f", delta)
-			rows = append(rows, []interface{}{ticker, h.Shares, h.Strike, quote.LatestPrice, deltaStr})
+			rows = append(rows, []interface{}{quote.Ticker, h.Shares, h.Strike, quote.LatestPrice, deltaStr})
 		}
 
 		rows = append(rows, []interface{}{"Total", "---", "---", "---", fmt.Sprintf("%0.2f", totalChange)})
@@ -449,10 +440,10 @@ func portfolioPlay(text []string, decodedMap url.Values) (string, error) {
 		summary := fmt.Sprintf("Portfolio Value: $%0.2f\nBalance: $%0.2f\nTotal: $%0.2f", total, acct.Balance, total+acct.Balance)
 		resp := fmt.Sprintf("```%v\n%v```", table, summary)
 		return resp, nil
-	} else {
-		s := fmt.Sprintf("Balance: $%0.2f", acct.Balance)
-		return s, nil
 	}
+
+	s := fmt.Sprintf("Balance: $%0.2f", acct.Balance)
+	return s, nil
 }
 
 func buyPlay(text []string, decodedMap url.Values) (string, error) {
@@ -472,7 +463,7 @@ func buyPlay(text []string, decodedMap url.Values) (string, error) {
 
 	// lookup ticker price
 	ticker := text[0]
-	price, err := iex.Price(ticker)
+	price, err := stockInterface.Price(ticker)
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("Unable to get price: %v", err))
 	}
@@ -530,7 +521,7 @@ func sellPlay(text []string, decodedMap url.Values) (string, error) {
 
 	// lookup ticker price
 	ticker := text[0]
-	price, err := iex.Price(ticker)
+	price, err := stockInterface.Price(ticker)
 	if err != nil {
 		return "", errors.New(fmt.Sprintf("Unable to get price: %v", err))
 	}
@@ -618,7 +609,7 @@ func getNews(text []string, decodedMap url.Values) (string, error) {
 	// Chop off news arg
 	text = text[1:]
 
-	latestNews, err := iex.News(text[0])
+	latestNews, err := stockInterface.News(text[0])
 	if err != nil {
 		return "", errors.New("Error: No news is good news right?")
 	}
@@ -626,7 +617,7 @@ func getNews(text []string, decodedMap url.Values) (string, error) {
 	// Try and pretty print them
 	var printNews string
 	for _, n := range latestNews {
-		printNews = fmt.Sprintf("%s%s\n\n", printNews, n.Summary)
+		printNews = fmt.Sprintf("%s%s\n\n", printNews, n)
 	}
 
 	return printNews, nil
