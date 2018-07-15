@@ -15,6 +15,6 @@ type Quote struct {
 // Lookup is the interface for a package to do stock lookups
 type Lookup interface {
 	BatchQuotes([]string) ([]*Quote, error)
-	Price(string) (int, error)
+	Price(string) (float64, error)
 	News(string) ([]string, error)
 }
