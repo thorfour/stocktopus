@@ -32,6 +32,12 @@ docker: setup
 	cp /etc/ssl/certs/ca-certificates.crt ./bin/docker/
 	cp ./build/docker/Dockerfile ./bin/docker/
 	docker build ./bin/docker/ -t quay.io/thorfour/stocktopus
+docker-alpha:
+	mkdir -p ./bin/docker
+	CGO_ENABLED=0 GOOS=linux go build -tags ALPHA -o ./bin/docker/server ./cmd/server
+	cp /etc/ssl/certs/ca-certificates.crt ./bin/docker/
+	cp ./build/docker/Dockerfile ./bin/docker/
+	docker build ./bin/docker/ -t quay.io/thorfour/stocktopus
 
 clean:
 	rm -r ./bin
