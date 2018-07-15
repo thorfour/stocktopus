@@ -77,6 +77,8 @@ Would add GOOG to a watch list called funlist, and then anyone in your Slack tea
 You might also want to watch/buy or lookup securities listed on non-US exchanges. To do so simply add the exchange followed by a colon(:) before the ticker name. 
 Ex. `/stocktopus tse:are` to list the ARE stock from the Toronto Stock Exchange 
 
+### Note: other exchanges are no longer supported by the application. To enable this feature on a local build, you can build with alphavantage instead of IEX using `make docker-alpha`
+
 ## Attribution
 
 Data provided for free by [IEX](https://iextrading.com/developer/)
