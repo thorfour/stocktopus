@@ -3,11 +3,12 @@
 variable "do_token" {}
 
 variable "region" {
-    default = "nyc2"
+    default = "nyc3"
 }
 
 variable "ssh_keys" {
     type = "list"
+    default = []
 }
 variable "redis_pw" {}
 variable "redis_addr" {}
@@ -42,7 +43,7 @@ resource "digitalocean_droplet" "stocktopus" {
 
 resource "digitalocean_droplet" "redis" {
     image = "ubuntu-18-04-x64"
-    name = "stocktopus_redis"
+    name = "stocktopus-redis"
     region = "${var.region}"
     size = "s-1vcpu-1gb"
     monitoring = true
