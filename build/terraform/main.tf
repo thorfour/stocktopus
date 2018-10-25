@@ -24,6 +24,15 @@ resource "digitalocean_ssh_key" "default" {
    public_key = "${file("${var.ssh_key_path}")}"
 }
 
+# Create redis.conf file
+data "template_file" "redisconf" {
+    template = "${file("redis.conf")}"
+
+    vars {
+        redis_pw = "${var.redis_pw}"
+    }
+}
+
 # Create separate redis droplet
 resource "digitalocean_droplet" "redis" {
     image = "ubuntu-18-04-x64"
@@ -34,8 +43,13 @@ resource "digitalocean_droplet" "redis" {
     ssh_keys = ["${digitalocean_ssh_key.default.fingerprint}"]
     tags = ["stocktopus", "terraform"]
 
+    provisioner "file" {
+        content = "${data.template_file.redisconf.rendered}"
+        destination = "/data"
+    }
+
     provisioner "local-exec" {
-        command = "sudo apt install docker"
+        command = "sudo apt install docker.io"
     }
 
     provisioner "local-exec" {
@@ -43,7 +57,7 @@ resource "digitalocean_droplet" "redis" {
     }
 
     provisioner "local-exec" {
-        command = "docker run --name redis -d -p 6379:6379 -v /data:/data redis"
+        command = "docker run --name redis -d -p 6379:6379 -v /data:/data redis redis-server /data/redis.conf"
     }
 }
 
@@ -63,7 +77,7 @@ resource "digitalocean_droplet" "stocktopus" {
     ssh_keys = ["${digitalocean_ssh_key.default.fingerprint}"]
 
     provisioner "local-exec" {
-        command = "sudo apt install docker"
+        command = "sudo apt install docker.io"
     }
 
     provisioner "local-exec" {
