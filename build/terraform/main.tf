@@ -41,6 +41,10 @@ resource "digitalocean_droplet" "redis" {
     provisioner "local-exec" {
         command = "docker pull redis"
     }
+
+    provisioner "local-exec" {
+        command = "docker run --name redis -d -p 6379:6379 -v /data:/data redis"
+    }
 }
 
 output "stocktopus_redis_ip" {
