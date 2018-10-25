@@ -12,6 +12,9 @@ variable "ssh_keys" {
 }
 variable "redis_pw" {}
 variable "redis_addr" {}
+variable "hostname" {
+    default = "beta.stocktopus.io"
+}
 
 # Configure the DigitalOcean Provider
 provider "digitalocean" {
@@ -37,10 +40,11 @@ resource "digitalocean_droplet" "stocktopus" {
     }
 
     provisioner "local-exec" {
-        command = "docker run -d -p 80:80 -p 443:443 -e REDISADDR=${var.redis_addr} -e REDISPW=${var.redis_pw} quay.io/thorfour/stocktopus:v1.3.2"
+        command = "docker run --name stocktopus -d -p 80:80 -p 443:443 -e REDISADDR=${var.redis_addr} -e REDISPW=${var.redis_pw} -v /cert:/cert quay.io/thorfour/stocktopus:v1.3.2 /server -host ${var.hostname} -c /cert"
     }
 }
 
+# Create separate redis droplet
 resource "digitalocean_droplet" "redis" {
     image = "ubuntu-18-04-x64"
     name = "stocktopus-redis"
