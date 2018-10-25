@@ -70,8 +70,9 @@ resource "digitalocean_droplet" "redis" {
     provisioner "remote-exec" {
         inline = [
             "mkdir /data",
+            "mv /etc/redis.conf /data/",
             "docker pull redis",
-            "docker run --name redis -d -p 6379:6379 -v /data:/data redis redis-server /etc/redis.conf",
+            "docker run --name redis -d -p 6379:6379 -v /data:/data redis redis-server /data/redis.conf",
         ]
 
         connection {
