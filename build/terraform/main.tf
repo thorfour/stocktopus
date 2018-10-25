@@ -48,7 +48,7 @@ resource "digitalocean_droplet" "redis" {
 
     provisioner "file" {
         content = "${data.template_file.redisconf.rendered}"
-        destination = "/data/redis.conf"
+        destination = "/etc/redis.conf"
 
         connection {
             type = "ssh"
@@ -57,16 +57,19 @@ resource "digitalocean_droplet" "redis" {
         }
     }
 
-    provisioner "local-exec" {
-        command = "sudo apt install docker.io"
-    }
+    provisioner "remote-exec" {
+        inline = [
+            "mkdir /data",
+            "apt install -y docker.io",
+            "docker pull redis",
+            "docker run --name redis -d -p 6379:6379 -v /data:/data redis redis-server /etc/redis.conf",
+        ]
 
-    provisioner "local-exec" {
-        command = "docker pull redis"
-    }
-
-    provisioner "local-exec" {
-        command = "docker run --name redis -d -p 6379:6379 -v /data:/data redis redis-server /data/redis.conf"
+        connection {
+            type = "ssh"
+            user = "root"
+            private_key = "${file("${var.ssh_private_key_path}")}"
+        }
     }
 }
 
@@ -85,16 +88,19 @@ resource "digitalocean_droplet" "stocktopus" {
     tags = ["stocktopus", "terraform"]
     ssh_keys = ["${digitalocean_ssh_key.default.fingerprint}"]
 
-    provisioner "local-exec" {
-        command = "sudo apt install docker.io"
-    }
+    provisioner "remote-exec" {
+        inline = [
+            "mkdir /cert",
+            "apt install -y docker.io",
+            "docker pull quay.io/thorfour/stocktopus:v1.3.2",
+            "docker run --name stocktopus -d -p 80:80 -p 443:443 -e REDISADDR=${digitalocean_droplet.redis.ipv4_address} -e REDISPW=${var.redis_pw} -v /cert:/cert quay.io/thorfour/stocktopus:v1.3.2 /server -host ${var.hostname} -c /cert",
+        ]
 
-    provisioner "local-exec" {
-        command = "docker pull quay.io/thorfour/stocktopus:v1.3.2"
-    }
-
-    provisioner "local-exec" {
-        command = "docker run --name stocktopus -d -p 80:80 -p 443:443 -e REDISADDR=${digitalocean_droplet.redis.ipv4_address} -e REDISPW=${var.redis_pw} -v /cert:/cert quay.io/thorfour/stocktopus:v1.3.2 /server -host ${var.hostname} -c /cert"
+        connection {
+            type = "ssh"
+            user = "root"
+            private_key = "${file("${var.ssh_private_key_path}")}"
+        }
     }
 }
 
