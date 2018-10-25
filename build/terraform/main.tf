@@ -13,6 +13,9 @@ variable "hostname" {
 variable "ssh_key_path" {
     default = "~/.ssh/id_rsa.pub"
 }
+variable "ssh_private_key_path" {
+    default = "~/.ssh/id_rsa"
+}
 
 # Configure the DigitalOcean Provider
 provider "digitalocean" {
@@ -45,7 +48,13 @@ resource "digitalocean_droplet" "redis" {
 
     provisioner "file" {
         content = "${data.template_file.redisconf.rendered}"
-        destination = "/data"
+        destination = "/data/redis.conf"
+
+        connection {
+            type = "ssh"
+            user = "root"
+            private_key = "${file("${var.ssh_private_key_path}")}"
+        }
     }
 
     provisioner "local-exec" {
