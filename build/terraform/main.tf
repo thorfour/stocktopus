@@ -32,7 +32,7 @@ resource "digitalocean_droplet" "redis" {
     size = "s-1vcpu-1gb"
     monitoring = true
     ssh_keys = ["${digitalocean_ssh_key.default.fingerprint}"]
-    tags = ["stocktopus"]
+    tags = ["stocktopus", "terraform"]
 
     provisioner "local-exec" {
         command = "sudo apt install docker"
@@ -55,7 +55,7 @@ resource "digitalocean_droplet" "stocktopus" {
     region = "${var.region}"
     size = "s-1vcpu-1gb"
     monitoring = true
-    tags = ["stocktopus"]
+    tags = ["stocktopus", "terraform"]
     ssh_keys = ["${digitalocean_ssh_key.default.fingerprint}"]
 
     provisioner "local-exec" {
