@@ -14,6 +14,13 @@ Simple Slack bot that posts stock prices. It can be build as an RTM Slack bot, o
 
 `go get -t -d github.com/thorfour/stocktopus/...`
 
+#### or
+`docker pull quay.io/thorfour/stocktopus:v1.0.0`
+
+## Deploy
+
+If you'd like to deploy your own version of stocktopus to DigitalOcean cloud there are [terraform](https://www.terraform.io/) files provided in `build/terraform`, simply run `terraform apply`. You'll need to provide a do api key and provide your own hostname. 
+
 ## Build
 
 ### Docker:
@@ -43,27 +50,11 @@ make docker
 `bin/rtm` for the rtm client
 
 ## Run
-`./stocktopus [slack-bot-token]`
-or for aws
-upload the `stocktopus.zip` file in `/bin/aws` as a lambda function
-or for gcp
-upload the `stocktopus.zip` file in `bin/gcp` as a cloud function
-
-### Docker
-
-(optionally can pull stocktopus from quay.io using `docker pull quay.io/thorfour/stocktopus:v1.0.0`)
-
 `docker run -d -p 80:80 -p 443:443 -e REDISADDR=<redis endpoint> -e REDISPW=<redis password> quay.io/thorfour/stocktopus:v1.0.0`
 
 ## Usage
-The RTM bot will look for any direct messages sent to it and try to parse them as tickers, and respond with stock quotes.
-> @stockbotname GOOGL
-
-The aws slash command will respond to slash commands. Single tickers will be a quote and inline graph. 
+The slash command will respond to slash commands. Single tickers will be a quote and inline graph. 
 > /stocktopus GOOGL
-
-
-
 
 for a complete list of commands the bot supports.
 > /stocktopus help 
