@@ -127,3 +127,21 @@ output "stocktopus_ip" {
     description = "stocktopus main ipv4"
     value = "${digitalocean_droplet.stocktopus.ipv4_address}"
 }
+
+# Create firewall to only allow access to redis from stocktopus
+resource "digitalocean_firewall" "stocktopus_redis" {
+    name = "stocktopus-access-only"
+
+    inbound_rule = [
+        {
+            protocol = "tcp"
+            port_range = "22"
+            source_addresses = ["0.0.0.0/0", "::/0"]
+        },
+        {
+            protocol = "tcp"
+            port_range = "6379"
+            source_tags = ["stocktopus"]
+        }
+    ]
+}
