@@ -1,4 +1,4 @@
-.PHONY: all rtm aws gcp auth clean
+.PHONY: all rtm aws gcp auth clean docker
 
 RTM_NAME='rtm'
 AUTH_NAME='oauth'

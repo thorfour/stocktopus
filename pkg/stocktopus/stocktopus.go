@@ -8,11 +8,14 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/net/html"
 	redis "gopkg.in/redis.v5"
 
 	"github.com/bndr/gotabulate"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/thorfour/stocktopus/pkg/cfg"
 	"github.com/thorfour/stocktopus/pkg/stock"
 )
@@ -43,7 +46,13 @@ const (
 	reset     = "RESET"
 )
 
-var cmds map[string]cmdInfo
+var (
+	cmds    map[string]cmdInfo
+	cmdHist = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name: "command_timings",
+		Help: "A histogram of cmd request execution times",
+	}, []string{"command"})
+)
 
 // Mapping of command string to function
 func init() {
@@ -65,6 +74,11 @@ func init() {
 
 type stockFunc func(string) (string, error)
 
+// measureTime is a helper function to measure the execution time of a function
+func measureTime(start time.Time, label string) {
+	cmdHist.WithLabelValues(label).Observe(time.Since(start).Seconds())
+}
+
 // Process url string to provide stocktpus functionality
 func Process(args url.Values) (string, error) {
 	text, ok := args["text"]
@@ -82,6 +96,7 @@ func Process(args url.Values) (string, error) {
 
 // Add ticker(s) to a watch list
 func add(text []string, decodedMap url.Values) (string, error) {
+	defer measureTime(time.Now(), "add")
 
 	if len(text) < 2 { // Must be something to add to watch list
 		return "", errors.New("Error: Invalid number of arguments")
@@ -112,7 +127,7 @@ func add(text []string, decodedMap url.Values) (string, error) {
 
 	_, err := rClient.SAdd(key, members...).Result()
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("Error addtolist: %v", err))
+		return "", fmt.Errorf("Error addtolist: %v", err)
 	}
 
 	// Not an error but message of Added should be supressed
@@ -121,6 +136,7 @@ func add(text []string, decodedMap url.Values) (string, error) {
 
 // Print out a watchlist
 func print(text []string, decodedMap url.Values) (string, error) {
+	defer measureTime(time.Now(), "print")
 
 	// User and token to be used as watch list lookup
 	user := decodedMap["user_id"]
@@ -152,6 +168,7 @@ func print(text []string, decodedMap url.Values) (string, error) {
 
 // Remove a single ticker from a watch list
 func remove(text []string, decodedMap url.Values) (string, error) {
+	defer measureTime(time.Now(), "remove")
 
 	// Chop off printList arg
 	text = text[1:]
@@ -179,7 +196,7 @@ func remove(text []string, decodedMap url.Values) (string, error) {
 	// Remove from watch list
 	_, err := rClient.SRem(key, members...).Result()
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("Error rmfromlist: %v", err))
+		return "", fmt.Errorf("Error rmfromlist: %v", err)
 	}
 
 	return "", errors.New("Removed")
@@ -187,6 +204,7 @@ func remove(text []string, decodedMap url.Values) (string, error) {
 
 // Delete a watch list. Deletes the whole file instead of clearing
 func clearList(text []string, decodedMap url.Values) (string, error) {
+	defer measureTime(time.Now(), "clear")
 
 	user := decodedMap["user_id"]
 	token := decodedMap["token"]
@@ -208,7 +226,7 @@ func clearList(text []string, decodedMap url.Values) (string, error) {
 
 	_, err := rClient.Del(key).Result()
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("Error clear: %v", err))
+		return "", fmt.Errorf("Error clear: %v", err)
 	}
 
 	return "", errors.New("Removed")
@@ -216,6 +234,7 @@ func clearList(text []string, decodedMap url.Values) (string, error) {
 
 // Prints out help information about supported commands
 func printHelp(text []string, decodedMap url.Values) (string, error) {
+	defer measureTime(time.Now(), "help")
 
 	var out string
 	for _, val := range cmds {
@@ -238,6 +257,8 @@ func getMultiQuote(text string) ([]*stock.Quote, error) {
 
 // Default functionality of grabbing stock quote(s)
 func getQuotes(text string, decodedMap url.Values) (string, error) {
+	defer measureTime(time.Now(), "quotes")
+
 	var chartFunc stockFunc
 	var quote string
 
@@ -290,6 +311,7 @@ func getQuotes(text string, decodedMap url.Values) (string, error) {
 
 // Print out a company profile
 func getInfo(text []string, decodedMap url.Values) (string, error) {
+	defer measureTime(time.Now(), "info")
 
 	if len(text) != 2 {
 		return "", errors.New("Error: Invalid number of arguments")
@@ -322,6 +344,7 @@ type holding struct {
 }
 
 func depositPlay(text []string, decodedMap url.Values) (string, error) {
+	defer measureTime(time.Now(), "deposit")
 
 	if len(text) != 2 { // Must have an amount to add
 		return "", errors.New("Error: Invalid number arguments")
@@ -333,7 +356,7 @@ func depositPlay(text []string, decodedMap url.Values) (string, error) {
 	// Parse amount to add to account
 	amt, err := strconv.ParseUint(text[0], 10, 64)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("Invalid amount: %v", err))
+		return "", fmt.Errorf("Invalid amount: %v", err)
 	}
 
 	// User and token to be used as lookup
@@ -351,7 +374,7 @@ func depositPlay(text []string, decodedMap url.Values) (string, error) {
 		newAcct.Holdings = make(map[string]holding)
 		newAcct.Balance = float64(amt)
 		saveAccount(client, newAcct, key)
-		return "", errors.New(fmt.Sprintf("New Balance: %v", newAcct.Balance))
+		return "", fmt.Errorf("New Balance: %v", newAcct.Balance)
 	}
 
 	// Add amount to balance
@@ -359,7 +382,7 @@ func depositPlay(text []string, decodedMap url.Values) (string, error) {
 
 	err = saveAccount(client, acct, key)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("Unable to save account: %v", err))
+		return "", fmt.Errorf("Unable to save account: %v", err)
 	}
 
 	// Respond with the new balance
@@ -368,6 +391,7 @@ func depositPlay(text []string, decodedMap url.Values) (string, error) {
 }
 
 func resetPlay(text []string, decodedMap url.Values) (string, error) {
+	defer measureTime(time.Now(), "reset")
 
 	if len(text) != 1 { // Only reset accepted
 		return "", errors.New("Error: Invalid number arguments")
@@ -384,10 +408,11 @@ func resetPlay(text []string, decodedMap url.Values) (string, error) {
 	newAcct.Holdings = make(map[string]holding)
 	newAcct.Balance = float64(0)
 	saveAccount(client, newAcct, key)
-	return "", errors.New(fmt.Sprintf("New Balance: %v", newAcct.Balance))
+	return "", fmt.Errorf("New Balance: %v", newAcct.Balance)
 }
 
 func portfolioPlay(text []string, decodedMap url.Values) (string, error) {
+	defer measureTime(time.Now(), "portfolio")
 
 	if len(text) != 1 { // Only portfolio accepted
 		return "", errors.New("Error: Invalid number arguments")
@@ -447,6 +472,7 @@ func portfolioPlay(text []string, decodedMap url.Values) (string, error) {
 }
 
 func buyPlay(text []string, decodedMap url.Values) (string, error) {
+	defer measureTime(time.Now(), "buy")
 
 	if len(text) != 3 { // BUY TICKER SHARES
 		return "", errors.New("Error: Invalid number arguments")
@@ -458,14 +484,14 @@ func buyPlay(text []string, decodedMap url.Values) (string, error) {
 	// Parse number of shares to purchase
 	amt, err := strconv.ParseUint(text[1], 10, 64)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("Invalid amount: %v", err))
+		return "", fmt.Errorf("Invalid amount: %v", err)
 	}
 
 	// lookup ticker price
 	ticker := text[0]
 	price, err := stockInterface.Price(ticker)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("Unable to get price: %v", err))
+		return "", fmt.Errorf("Unable to get price: %v", err)
 	}
 
 	// User and token to be used as lookup
@@ -498,13 +524,14 @@ func buyPlay(text []string, decodedMap url.Values) (string, error) {
 	// write account
 	err = saveAccount(client, acct, key)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("Unable to save account: %v", err))
+		return "", fmt.Errorf("Unable to save account: %v", err)
 	}
 
 	return "", errors.New("Done")
 }
 
 func sellPlay(text []string, decodedMap url.Values) (string, error) {
+	defer measureTime(time.Now(), "sell")
 
 	if len(text) != 3 { // SELL TICKER SHARES
 		return "", errors.New("Error: Invalid number arguments")
@@ -516,14 +543,14 @@ func sellPlay(text []string, decodedMap url.Values) (string, error) {
 	// Parse number of shares to purchase
 	amt, err := strconv.ParseUint(text[1], 10, 64)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("Invalid amount: %v", err))
+		return "", fmt.Errorf("Invalid amount: %v", err)
 	}
 
 	// lookup ticker price
 	ticker := text[0]
 	price, err := stockInterface.Price(ticker)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("Unable to get price: %v", err))
+		return "", fmt.Errorf("Unable to get price: %v", err)
 	}
 
 	// User and token to be used as lookup
@@ -556,7 +583,7 @@ func sellPlay(text []string, decodedMap url.Values) (string, error) {
 	// write account
 	err = saveAccount(client, acct, key)
 	if err != nil {
-		return "", errors.New(fmt.Sprintf("Unable to save account: %v", err))
+		return "", fmt.Errorf("Unable to save account: %v", err)
 	}
 
 	return "", errors.New("Done")
@@ -603,6 +630,8 @@ func connectRedis() *redis.Client {
 
 // getNews will print news from requested company
 func getNews(text []string, decodedMap url.Values) (string, error) {
+	defer measureTime(time.Now(), "news")
+
 	if len(text) != 2 {
 		return "", errors.New("Error: Invalid number of arguments")
 	}
