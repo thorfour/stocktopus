@@ -8,12 +8,14 @@ import (
 	"net/url"
 	"testing"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 func TestSimpleQuote(t *testing.T) {
 
 	// Run a debug server
-	go run(8088, true, ".")
+	go run(8088, true, ".", mux.NewRouter())
 
 	form := url.Values{
 		"text": {"amd"},

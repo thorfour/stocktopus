@@ -11,6 +11,8 @@ import (
 
 	"golang.org/x/crypto/acme/autocert"
 
+	"github.com/gorilla/mux"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/thorfour/stocktopus/pkg/cfg"
 	"github.com/thorfour/stocktopus/pkg/stocktopus"
 )
@@ -39,17 +41,19 @@ func main() {
 		log.Printf("Serving TLS for host %s", cfg.AllowedHost)
 		log.Printf("Storing certs in %s", *certCache)
 	}
-	run(*port, *debug, *certCache)
+	r := mux.NewRouter()
+	r.Handle("/metrics", promhttp.Handler()) // start prometheus endpoint
+
+	run(*port, *debug, *certCache, r)
 }
 
-func run(p int, d bool, certDir string) {
+func run(p int, d bool, certDir string, router *mux.Router) {
 
 	if d {
-		http.HandleFunc("/v1", handler)
-		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", p), nil))
+		router.HandleFunc("/v1", handler)
+		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", p), router))
 	} else {
-		mux := &http.ServeMux{}
-		mux.HandleFunc("/v1", handler)
+		router.HandleFunc("/v1", handler)
 		hostPolicy := func(ctx context.Context, host string) error {
 			if host == cfg.AllowedHost {
 				return nil
@@ -63,7 +67,7 @@ func run(p int, d bool, certDir string) {
 			Email:      cfg.SupportEmail,
 		}
 		srv := &http.Server{
-			Handler: mux,
+			Handler: router,
 			Addr:    fmt.Sprintf(":%v", p),
 			TLSConfig: &tls.Config{
 				GetCertificate: m.GetCertificate,
