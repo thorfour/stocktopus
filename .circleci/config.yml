@@ -28,6 +28,8 @@ jobs:
             make test
   docker:
     working_directory: /go/src/github.com/thorfour/stocktopus
+    docker:
+     - image: circleci/golang:1.11
     steps:
       - setup_remote_docker
       - checkout
