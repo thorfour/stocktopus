@@ -58,3 +58,6 @@ workflows:
       - deploy:
         requires:
           - docker
+        filters:
+          branches:
+            only: master
