@@ -42,10 +42,12 @@ jobs:
     docker:
      - image: circleci/golang:1.11
     steps:
+      - setup_remote_docker
       - checkout
       - run:
-        name: push release
+        name: push docker
         command: |
+            make docker
             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin quay.io
             docker push quay.io/thorfour/stocktopus
 
@@ -58,10 +60,7 @@ workflows:
       - docker
   post-commit:
     jobs:
-      - docker
       - deploy:
-          requires:
-            - docker
           filters:
             branches:
               only: master
