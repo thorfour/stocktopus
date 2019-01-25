@@ -45,8 +45,8 @@ jobs:
       - setup_remote_docker
       - checkout
       - run:
-        name: push docker
-        command: |
+          name: push docker
+          command: |
             make docker
             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin quay.io
             docker push quay.io/thorfour/stocktopus
