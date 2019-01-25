@@ -55,4 +55,6 @@ workflows:
   post-commit:
     jobs:
       - docker
-      - deploy
+      - deploy:
+        requires:
+          - docker
