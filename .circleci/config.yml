@@ -56,8 +56,8 @@ workflows:
     jobs:
       - docker
       - deploy:
-        requires:
-          - docker
-        filters:
-          branches:
-            only: master
+          requires:
+            - docker
+          filters:
+            branches:
+              only: master
