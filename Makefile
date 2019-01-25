@@ -4,7 +4,7 @@ RTM_NAME='rtm'
 AUTH_NAME='oauth'
 SERVERLESS_NAME='serverless'
 
-all:  rtm aws gcp docker test 
+all:  rtm aws gcp docker
 setup: 
 	mkdir -p ./bin/
 rtm: setup

@@ -1,0 +1,58 @@
+version: 2
+jobs:
+  build:
+    working_directory: /go/src/github.com/thorfour/stocktopus
+    docker:
+     - image: circleci/golang:1.11
+    steps:
+      - checkout
+      - run:
+          name: make all
+          command: | 
+            make all
+  test:
+    working_directory: /go/src/github.com/thorfour/stocktopus
+    docker:
+     - image: circleci/golang:1.11
+    steps:
+      - checkout
+      - run: 
+          name: go vet
+          command: | 
+            go vet ./...
+      - run:
+          name: make test
+          command: | 
+            make test
+  docker:
+    working_directory: /go/src/github.com/thorfour/stocktopus
+    docker:
+     - image: circleci/golang:1.11
+    steps:
+      - checkout
+      - run:
+          name: make docker
+          command: | 
+            make docker
+  deploy:
+    working_directory: /go/src/github.com/thorfour/stocktopus
+    docker:
+     - image: circleci/golang:1.11
+    steps:
+      - checkout
+      - run:
+        name: push release
+        command: |
+            echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin quay.io
+            docker push quay.io/thorfour/stocktopus
+
+workflows:
+  version: 2
+  pre-commit:
+    jobs:
+      - test
+      - build
+  post-commit:
+    jobs:
+      - docker
+      - deploy
