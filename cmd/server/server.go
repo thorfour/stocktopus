@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -64,11 +63,9 @@ func run(p int, d bool, certDir string, router *mux.Router) {
 		}
 
 		srv := &http.Server{
-			Handler: router,
-			Addr:    fmt.Sprintf(":%v", p),
-			TLSConfig: &tls.Config{
-				GetCertificate: m.GetCertificate,
-			},
+			Handler:   router,
+			Addr:      fmt.Sprintf(":%v", p),
+			TLSConfig: m.TLSConfig(),
 		}
 		go http.ListenAndServe(":80", m.HTTPHandler(nil))
 		log.Fatal(srv.ListenAndServeTLS("", ""))
