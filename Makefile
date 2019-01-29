@@ -13,7 +13,7 @@ go = @docker run \
 		-e XDG_CACHE_HOME=/tmp/.cache \
 		-e CGO_ENABLED=0 \
 	    -e GOOS=linux \
-		-e GOPATH=$(GOPATH) \
+		-e GOPATH=$(HOME)/go \
 		golang:$(GO_VERSION) \
 		go
 
