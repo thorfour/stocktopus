@@ -1,8 +1,6 @@
 package main
 
 import (
-	"context"
-	"crypto/tls"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -48,30 +46,26 @@ func main() {
 }
 
 func run(p int, d bool, certDir string, router *mux.Router) {
+	if d { // debug
 
-	if d {
 		router.HandleFunc("/v1", handler)
 		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", p), router))
+
 	} else {
+
 		router.HandleFunc("/v1", handler)
-		hostPolicy := func(ctx context.Context, host string) error {
-			if host == cfg.AllowedHost {
-				return nil
-			}
-			return fmt.Errorf("acme/autocert: only %s allowed", cfg.AllowedHost)
-		}
+
 		m := &autocert.Manager{
 			Prompt:     autocert.AcceptTOS,
-			HostPolicy: hostPolicy,
+			HostPolicy: autocert.HostWhitelist(cfg.AllowedHost),
 			Cache:      autocert.DirCache(certDir),
 			Email:      cfg.SupportEmail,
 		}
+
 		srv := &http.Server{
-			Handler: router,
-			Addr:    fmt.Sprintf(":%v", p),
-			TLSConfig: &tls.Config{
-				GetCertificate: m.GetCertificate,
-			},
+			Handler:   router,
+			Addr:      fmt.Sprintf(":%v", p),
+			TLSConfig: m.TLSConfig(),
 		}
 		go http.ListenAndServe(":80", m.HTTPHandler(nil))
 		log.Fatal(srv.ListenAndServeTLS("", ""))
@@ -95,7 +89,7 @@ func newReponse(resp http.ResponseWriter, message string, err error) {
 		Text:         message,
 	}
 
-	// Swithc to an ephemeral message
+	// Switch to an ephemeral message
 	if err != nil {
 		r.ResponseType = ephemeral
 		r.Text = err.Error()
@@ -110,12 +104,4 @@ func newReponse(resp http.ResponseWriter, message string, err error) {
 	resp.Header().Set("Content-Type", "application/json")
 	resp.Write(b)
 	return
-}
-
-func hostPolicy(ctx context.Context, host string) error {
-	if host == cfg.AllowedHost {
-		return nil
-	}
-
-	return fmt.Errorf("acme/autocert: only %s hist is allowed", cfg.AllowedHost)
 }
