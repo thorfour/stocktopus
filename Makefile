@@ -7,13 +7,13 @@ SERVERLESS_NAME='serverless'
 
 go = @docker run \
 		--rm \
-		-v ${PWD}:${PWD} \
-		-w ${PWD} \
+		-v ${PWD}:/go/src/github.com/thorfour/stocktopus \
+		-w /go/src/github.com/thorfour/stocktopus \
 		-u $$(id -u) \
 		-e XDG_CACHE_HOME=/tmp/.cache \
 		-e CGO_ENABLED=0 \
 	    -e GOOS=linux \
-		-e GOPATH=$(HOME)/go \
+		-e GOPATH=/go \
 		golang:$(GO_VERSION) \
 		go
 
