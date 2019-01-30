@@ -1,32 +1,6 @@
 version: 2
 jobs:
-  build:
-    working_directory: /go/src/github.com/thorfour/stocktopus
-    docker:
-     - image: circleci/golang:1.11
-    steps:
-      - checkout
-      - run:
-          name: make all
-          command: | 
-            make rtm
-            make aws
-            make gcp
-  test:
-    working_directory: /go/src/github.com/thorfour/stocktopus
-    docker:
-     - image: circleci/golang:1.11
-    steps:
-      - checkout
-      - run: 
-          name: go vet
-          command: | 
-            go vet ./...
-      - run:
-          name: make test
-          command: | 
-            make test
-  docker:
+  buildandtest:
     working_directory: /go/src/github.com/thorfour/stocktopus
     docker:
      - image: circleci/golang:1.11
@@ -34,9 +8,14 @@ jobs:
       - setup_remote_docker
       - checkout
       - run:
-          name: make docker
+          name: build
           command: | 
-            make docker
+            go build ./cmd/awslambda/
+            go build ./cmd/gcpfunction/
+            go build ./cmd/oauth/
+            go build ./cmd/rtm/
+            go build ./cmd/server
+            go test ./...
   deploy:
     working_directory: /go/src/github.com/thorfour/stocktopus
     docker:
@@ -47,7 +26,11 @@ jobs:
       - run:
           name: push docker
           command: |
-            make docker
+            mkdir -p ./bin/docker
+            go build -o ./bin/docker/server ./cmd/server
+            cp /etc/ssl/certs/ca-certificates.crt ./bin/docker/
+            cp ./build/docker/Dockerfile ./bin/docker/
+            docker build ./bin/docker/ -t quay.io/thorfour/stocktopus
             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin quay.io
             docker push quay.io/thorfour/stocktopus
 
@@ -55,9 +38,7 @@ workflows:
   version: 2
   pre-commit:
     jobs:
-      - test
-      - build
-      - docker
+      - buildandtest
   post-commit:
     jobs:
       - deploy:
