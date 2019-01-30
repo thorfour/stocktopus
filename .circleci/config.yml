@@ -27,7 +27,7 @@ jobs:
           name: push docker
           command: |
             mkdir -p ./bin/docker
-            go build -o ./bin/docker/server ./cmd/server
+            CGO_ENABLED=0 GOOS=linux go build -o ./bin/docker/server ./cmd/server
             cp /etc/ssl/certs/ca-certificates.crt ./bin/docker/
             cp ./build/docker/Dockerfile ./bin/docker/
             docker build ./bin/docker/ -t quay.io/thorfour/stocktopus
