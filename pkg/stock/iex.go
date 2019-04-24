@@ -2,6 +2,7 @@ package stock
 
 import (
 	iex "github.com/thorfour/iex/pkg/api"
+	iextype "github.com/thorfour/iex/pkg/types"
 )
 
 // IexWrapper is a wrapper around the IEX library
@@ -50,4 +51,14 @@ func (w *IexWrapper) News(ticker string) ([]string, error) {
 	}
 
 	return news, nil
+}
+
+// Stats returns the stats for a ticker
+func (w *IexWrapper) Stats(ticker string) (*iextype.Stats, error) {
+	stats, err := iex.Stats(ticker)
+	if err != nil {
+		return nil, err
+	}
+
+	return stats, nil
 }

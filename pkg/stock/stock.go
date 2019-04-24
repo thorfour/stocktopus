@@ -1,5 +1,9 @@
 package stock
 
+import (
+	"github.com/thorfour/iex/pkg/types"
+)
+
 // Quote holds all the information for a stock quote
 type Quote struct {
 	// Ticker is the ticker with the associated quote
@@ -17,4 +21,5 @@ type Lookup interface {
 	BatchQuotes([]string) ([]*Quote, error)
 	Price(string) (float64, error)
 	News(string) ([]string, error)
+	Stats(string) (*types.Stats, error)
 }

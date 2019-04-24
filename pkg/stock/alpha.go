@@ -1,10 +1,12 @@
 package stock
 
 import (
+	"fmt"
 	"sync"
 
 	av "github.com/cmckee-dev/go-alpha-vantage"
 	iex "github.com/thorfour/iex/pkg/api"
+	iextype "github.com/thorfour/iex/pkg/types"
 )
 
 // AlphaWrapper is a wrapper around the AlphaVantage library
@@ -88,4 +90,9 @@ func (w *AlphaWrapper) News(ticker string) ([]string, error) {
 	}
 
 	return news, nil
+}
+
+// Stats returns the stats for a given ticker
+func (w *AlphaWrapper) Stats(ticker string) (*iextype.Stats, error) {
+	return nil, fmt.Errorf("Unimplemented Feature")
 }
