@@ -82,6 +82,25 @@ func News(ticker string) ([]types.News, error) {
 	return news, nil
 }
 
+// Stats returns the stats for a given symbol
+func Stats(ticker string) (*types.Stats, error) {
+
+	url := endpoint.API().Stock().Ticker(ticker).Stats()
+	jsonQuote, err := getJSON(url)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse into Stats
+	stats := &types.Stats{}
+	err = json.Unmarshal(jsonQuote, stats)
+	if err != nil {
+		return nil, err
+	}
+
+	return stats, nil
+}
+
 // getJSON returns the JSON response from a url
 func getJSON(url endpoint.APIString) ([]byte, error) {
 

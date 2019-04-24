@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -36,6 +37,7 @@ const (
 	help           = "HELP"
 	info           = "INFO"
 	news           = "NEWS"
+	stats          = "STATS"
 
 	// Play money commands
 	buy       = "BUY"
@@ -68,6 +70,7 @@ func init() {
 		buy:            {buyPlay, "*buy [ticker shares]* Purchases number of shares in a security with play money"},
 		sell:           {sellPlay, "*sell [ticker shares]* Sells number of shares of specified security"},
 		news:           {getNews, "*ticker* Displays the latest news for a company"},
+		stats:          {getStats, "stats *ticker* [field options...]"},
 		help:           {printHelp, "*[tickers...]*       pull stock quotes for list of tickers"},
 	}
 }
@@ -735,4 +738,41 @@ func getChartLinkFinviz(symbol string) (string, error) {
 	url := fmt.Sprintf("http://finviz.com/chart.ashx?t=%v&ty=c&ta=1&p=d&s=l", symbol)
 
 	return url, nil
+}
+
+func getStats(text []string, _ url.Values) (string, error) {
+	defer measureTime(time.Now(), "stats")
+
+	// chop off stats arg
+	text = text[1:]
+
+	stats, err := stockInterface.Stats(text[0])
+	if err != nil {
+		return "", err
+	}
+
+	if len(text) == 1 { // user didn't request specific stats, return all of them
+		return fmt.Sprintf("%v", stats), nil
+	}
+
+	// Pull out only the requested info
+	requested := make(map[string]bool, len(text)-1)
+	for i := 1; i < len(text); i++ {
+		requested[strings.ToLower(text[i])] = true
+	}
+
+	var retStr string
+
+	// Find the stat inside the struct
+	v := reflect.ValueOf(stats).Elem()
+	for i := 0; i < v.NumField(); i++ {
+		f := v.Field(i)
+		n := strings.ToLower(v.Type().Field(i).Name)
+
+		if requested[n] {
+			retStr = retStr + fmt.Sprintf("%s: %v\n", n, f)
+		}
+	}
+
+	return retStr, nil
 }

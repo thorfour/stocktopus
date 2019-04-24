@@ -83,3 +83,8 @@ func (s APIString) Integer(a int) APIString {
 func (s APIString) String() string {
 	return string(s)
 }
+
+// Stats adds the stats type
+func (s APIString) Stats() APIString {
+	return APIString(string(s) + types.StatsStr + "/")
+}
