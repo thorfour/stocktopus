@@ -65,3 +65,9 @@ func TestQuoteExchange(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestStats(t *testing.T) {
+	if _, err := getStats([]string{"stats", "aapl", "marketcap"}, nil); err != nil {
+		t.Error(err)
+	}
+}

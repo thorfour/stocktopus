@@ -740,7 +740,7 @@ func getChartLinkFinviz(symbol string) (string, error) {
 	return url, nil
 }
 
-func getStats(text []string, decodedMap url.Values) (string, error) {
+func getStats(text []string, _ url.Values) (string, error) {
 	defer measureTime(time.Now(), "stats")
 
 	// chop off stats arg
@@ -758,7 +758,7 @@ func getStats(text []string, decodedMap url.Values) (string, error) {
 	// Pull out only the requested info
 	requested := make(map[string]bool, len(text)-1)
 	for i := 1; i < len(text); i++ {
-		requested[text[i]] = true
+		requested[strings.ToLower(text[i])] = true
 	}
 
 	var retStr string
@@ -767,10 +767,10 @@ func getStats(text []string, decodedMap url.Values) (string, error) {
 	v := reflect.ValueOf(stats).Elem()
 	for i := 0; i < v.NumField(); i++ {
 		f := v.Field(i)
-		n := v.Type().Field(i).Name
+		n := strings.ToLower(v.Type().Field(i).Name)
 
 		if requested[n] {
-			retStr = retStr + fmt.Sprintf("%s: %s\n", n, f)
+			retStr = retStr + fmt.Sprintf("%s: %v\n", n, f)
 		}
 	}
 
