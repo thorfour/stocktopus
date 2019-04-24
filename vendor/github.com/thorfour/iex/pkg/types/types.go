@@ -83,32 +83,32 @@ type Stats struct {
 	Marketcap           int64       `json:"marketcap"`
 	Beta                float64     `json:"beta"`
 	Week52High          float64     `json:"week52high"`
-	Week52Low           int         `json:"week52low"`
+	Week52Low           float64     `json:"week52low"`
 	Week52Change        float64     `json:"week52change"`
-	ShortInterest       int         `json:"shortInterest"`
-	ShortDate           int         `json:"shortDate"`
+	ShortInterest       float64     `json:"shortInterest"`
+	ShortDate           float64     `json:"shortDate"`
 	DividendRate        float64     `json:"dividendRate"`
 	DividendYield       float64     `json:"dividendYield"`
-	ExDividendDate      string      `json:"exDividendDate"`
+	ExDividendDate      interface{} `json:"exDividendDate"`
 	LatestEPS           float64     `json:"latestEPS"`
 	LatestEPSDate       string      `json:"latestEPSDate"`
-	SharesOutstanding   int64       `json:"sharesOutstanding"`
-	Float               int64       `json:"float"`
+	SharesOutstanding   float64     `json:"sharesOutstanding"`
+	Float               float64     `json:"float"`
 	ReturnOnEquity      float64     `json:"returnOnEquity"`
 	ConsensusEPS        float64     `json:"consensusEPS"`
-	NumberOfEstimates   int         `json:"numberOfEstimates"`
+	NumberOfEstimates   float64     `json:"numberOfEstimates"`
 	EPSSurpriseDollar   interface{} `json:"EPSSurpriseDollar"`
 	EPSSurprisePercent  float64     `json:"EPSSurprisePercent"`
 	Symbol              string      `json:"symbol"`
-	EBITDA              int         `json:"EBITDA"`
-	Revenue             int         `json:"revenue"`
-	GrossProfit         int         `json:"grossProfit"`
-	Cash                int         `json:"cash"`
-	Debt                int         `json:"debt"`
+	EBITDA              float64     `json:"EBITDA"`
+	Revenue             float64     `json:"revenue"`
+	GrossProfit         float64     `json:"grossProfit"`
+	Cash                float64     `json:"cash"`
+	Debt                float64     `json:"debt"`
 	TtmEPS              float64     `json:"ttmEPS"`
-	RevenuePerShare     int         `json:"revenuePerShare"`
-	RevenuePerEmployee  int         `json:"revenuePerEmployee"`
-	PeRatioHigh         int         `json:"peRatioHigh"`
+	RevenuePerShare     float64     `json:"revenuePerShare"`
+	RevenuePerEmployee  float64     `json:"revenuePerEmployee"`
+	PeRatioHigh         float64     `json:"peRatioHigh"`
 	PeRatioLow          float64     `json:"peRatioLow"`
 	ReturnOnAssets      float64     `json:"returnOnAssets"`
 	ReturnOnCapital     interface{} `json:"returnOnCapital"`

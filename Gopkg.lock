@@ -107,7 +107,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b1b3a8ecc8ea6f2007aa1a71b21c58d586a3701dbc8ea88e912095fa630cd066"
+  digest = "1:8fa9d0fc39883d22fd1d631065992f2f98af7146f3f4d7755812fa27071f9b9c"
   name = "github.com/thorfour/iex"
   packages = [
     "pkg/api",
@@ -115,7 +115,7 @@
     "pkg/types",
   ]
   pruneopts = "UT"
-  revision = "8b6d111899939897046a951e501067afec23967d"
+  revision = "547a9970c2715393bef96bc6d64b8d5ff68e3d4e"
 
 [[projects]]
   branch = "master"
