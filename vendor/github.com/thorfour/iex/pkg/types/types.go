@@ -89,7 +89,7 @@ type Stats struct {
 	ShortDate           float64     `json:"shortDate"`
 	DividendRate        float64     `json:"dividendRate"`
 	DividendYield       float64     `json:"dividendYield"`
-	ExDividendDate      string      `json:"exDividendDate"`
+	ExDividendDate      interface{} `json:"exDividendDate"`
 	LatestEPS           float64     `json:"latestEPS"`
 	LatestEPSDate       string      `json:"latestEPSDate"`
 	SharesOutstanding   float64     `json:"sharesOutstanding"`
