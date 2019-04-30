@@ -101,6 +101,25 @@ func Stats(ticker string) (*types.Stats, error) {
 	return stats, nil
 }
 
+// Company returns company info
+func Company(ticker string) (*types.Company, error) {
+
+	url := endpoint.API().Stock().Ticker(ticker).Company()
+	jsonQuote, err := getJSON(url)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse into Company
+	c := &types.Company{}
+	err = json.Unmarshal(jsonQuote, c)
+	if err != nil {
+		return nil, err
+	}
+
+	return c, nil
+}
+
 // getJSON returns the JSON response from a url
 func getJSON(url endpoint.APIString) ([]byte, error) {
 

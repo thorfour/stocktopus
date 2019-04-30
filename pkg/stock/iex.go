@@ -55,10 +55,10 @@ func (w *IexWrapper) News(ticker string) ([]string, error) {
 
 // Stats returns the stats for a ticker
 func (w *IexWrapper) Stats(ticker string) (*iextype.Stats, error) {
-	stats, err := iex.Stats(ticker)
-	if err != nil {
-		return nil, err
-	}
+	return iex.Stats(ticker)
+}
 
-	return stats, nil
+// Company wraps the iex Company call
+func (w *IexWrapper) Company(ticker string) (*iextype.Company, error) {
+	return iex.Company(ticker)
 }

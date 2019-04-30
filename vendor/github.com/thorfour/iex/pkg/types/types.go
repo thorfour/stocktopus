@@ -10,6 +10,7 @@ const (
 	QuoteStr   = "quote"
 	NewsStr    = "news"
 	StatsStr   = "stats"
+	CompanyStr = "company"
 	ChartStr   = "chart"
 	StockStr   = "stock"
 	PriceStr   = "price"
@@ -129,4 +130,18 @@ type Stats struct {
 	Month1ChangePercent float64     `json:"month1ChangePercent"`
 	Day5ChangePercent   float64     `json:"day5ChangePercent"`
 	Day30ChangePercent  float64     `json:"day30ChangePercent"`
+}
+
+// Company contains company information
+type Company struct {
+	Symbol      string   `json:"symbol"`
+	CompanyName string   `json:"companyName"`
+	Exchange    string   `json:"exchange"`
+	Industry    string   `json:"industry"`
+	Website     string   `json:"website"`
+	Description string   `json:"description"`
+	CEO         string   `json:"CEO"`
+	IssueType   string   `json:"issueType"`
+	Sector      string   `json:"sector"`
+	Tags        []string `json:"tags"`
 }

@@ -88,3 +88,8 @@ func (s APIString) String() string {
 func (s APIString) Stats() APIString {
 	return APIString(string(s) + types.StatsStr + "/")
 }
+
+// Company adds the company type
+func (s APIString) Company() APIString {
+	return APIString(string(s) + types.CompanyStr)
+}

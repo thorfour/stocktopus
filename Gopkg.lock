@@ -107,7 +107,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8fa9d0fc39883d22fd1d631065992f2f98af7146f3f4d7755812fa27071f9b9c"
+  digest = "1:d41ab1d56737516c31f69f31d3ff0fdd20d42a01681b57571fb415ab5c16701c"
   name = "github.com/thorfour/iex"
   packages = [
     "pkg/api",
@@ -115,7 +115,7 @@
     "pkg/types",
   ]
   pruneopts = "UT"
-  revision = "547a9970c2715393bef96bc6d64b8d5ff68e3d4e"
+  revision = "ed75f84da573474ae67c49c48f67616b6b397347"
 
 [[projects]]
   branch = "master"
@@ -130,11 +130,9 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:e333cfdf167ce7e1ca74d4efc6c56d71fab02f198d3e860306bfc6c293588a54"
+  digest = "1:ef151399f80f91873b74e1741370d6146a1976e5060fe3b41068e4e664388fd6"
   name = "golang.org/x/net"
   packages = [
-    "html",
-    "html/atom",
     "idna",
     "websocket",
   ]
@@ -194,7 +192,6 @@
     "github.com/thorfour/iex/pkg/api",
     "github.com/thorfour/iex/pkg/types",
     "golang.org/x/crypto/acme/autocert",
-    "golang.org/x/net/html",
     "golang.org/x/net/websocket",
     "gopkg.in/redis.v5",
   ]
