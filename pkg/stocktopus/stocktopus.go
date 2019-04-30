@@ -4,14 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/http"
 	"net/url"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
-	"golang.org/x/net/html"
 	redis "gopkg.in/redis.v5"
 
 	"github.com/bndr/gotabulate"
@@ -323,12 +321,12 @@ func getInfo(text []string, decodedMap url.Values) (string, error) {
 	// Chop off arg
 	text = text[1:]
 
-	resp, err := getStockInfo(text[0])
+	info, err := stockInterface.Company(text[0])
 	if err != nil {
-		return "", fmt.Errorf("Error: %v", err)
+		return "", errors.New("Error: Unable to find info")
 	}
 
-	return resp, nil
+	return strings.Join([]string{info.CompanyName, info.Industry, info.Website, info.CEO, info.Description}, "\n"), nil
 }
 
 //--------------------
@@ -653,73 +651,6 @@ func getNews(text []string, decodedMap url.Values) (string, error) {
 	}
 
 	return printNews, nil
-}
-
-// getStockInfo returns a company information paragraph from reuters
-func getStockInfo(symbol string) (string, error) {
-
-	symbol = strings.ToUpper(symbol)
-	url := fmt.Sprintf("http://reuters.com/finance/stocks/companyProfile?symbol=%v", symbol)
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", err
-	}
-
-	tokenizer := html.NewTokenizer(resp.Body)
-	nextParagraph := false
-	moduleBody := false
-	for {
-		token := tokenizer.Next()
-		if token == html.ErrorToken {
-			break
-		}
-
-		if token != html.StartTagToken {
-			if nextParagraph {
-				text := string(tokenizer.Text())
-				if len(text) > 3 {
-					return text, nil
-				}
-			}
-			continue
-		}
-
-		switch {
-		case moduleBody:
-			tag, hasAttr := tokenizer.TagName()
-			if string(tag) == "div" && hasAttr {
-				key, val, _ := tokenizer.TagAttr()
-				if string(key) == "class" && string(val) == "moduleBody" {
-					nextParagraph = true
-					moduleBody = false
-				}
-			}
-		case nextParagraph:
-			tag, _ := tokenizer.TagName()
-			switch string(tag) {
-			case "p":
-				tokenizer.Next()
-				t := string(tokenizer.Text())
-				if len(t) == 0 {
-					t = "There's nothing here"
-				}
-				return t, nil
-			}
-		default:
-			// Find <div id="companyNews">
-			// after that the following tag to look for is <div class="moduleBody">
-			tag, hasAttr := tokenizer.TagName()
-			if string(tag) == "div" && hasAttr {
-				key, val, _ := tokenizer.TagAttr()
-				if string(key) == "id" && string(val) == "companyNews" {
-					moduleBody = true
-				}
-			}
-		}
-	}
-
-	return "", fmt.Errorf("Unable to find quote")
 }
 
 // getChartLinkCurrencyFinviz returns a currenct chart link from finviz

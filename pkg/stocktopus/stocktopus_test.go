@@ -71,3 +71,10 @@ func TestStats(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestInfo(t *testing.T) {
+	_, err := getInfo([]string{"info", "goog"}, nil)
+	if err != nil {
+		t.Error(err)
+	}
+}

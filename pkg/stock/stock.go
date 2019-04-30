@@ -22,4 +22,5 @@ type Lookup interface {
 	Price(string) (float64, error)
 	News(string) ([]string, error)
 	Stats(string) (*types.Stats, error)
+	Company(string) (*types.Company, error)
 }

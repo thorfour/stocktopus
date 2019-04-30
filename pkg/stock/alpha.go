@@ -93,6 +93,11 @@ func (w *AlphaWrapper) News(ticker string) ([]string, error) {
 }
 
 // Stats returns the stats for a given ticker
-func (w *AlphaWrapper) Stats(ticker string) (*iextype.Stats, error) {
+func (w *AlphaWrapper) Stats(_ string) (*iextype.Stats, error) {
+	return nil, fmt.Errorf("Unimplemented Feature")
+}
+
+// Company returns company info
+func (w *AlphaWrapper) Company(_ string) (*iextype.Company, error) {
 	return nil, fmt.Errorf("Unimplemented Feature")
 }
