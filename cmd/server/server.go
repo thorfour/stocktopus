@@ -22,7 +22,8 @@ const (
 
 var (
 	port      = flag.Int("p", 443, "port to serve on")
-	debug     = flag.Bool("d", false, "turn TLS off")
+	notls     = flag.Bool("n", false, "turn off TLS")
+	debug     = flag.Bool("d", false, "turn on debugging. Disable TLS")
 	certCache = flag.String("c", "/cert", "location to store certs")
 )
 
@@ -32,21 +33,27 @@ type response struct {
 	Text         string `json:"text"`
 }
 
-func main() {
+func init() {
 	flag.Parse()
+}
+
+func main() {
 	log.Printf("Starting server on port %v", *port)
-	if !*debug {
+
+	tlsOff := *debug || *notls
+	if !tlsOff {
 		log.Printf("Serving TLS for host %s", cfg.AllowedHost)
 		log.Printf("Storing certs in %s", *certCache)
 	}
+
 	r := mux.NewRouter()
 	r.Handle("/metrics", promhttp.Handler()) // start prometheus endpoint
 
-	run(*port, *debug, *certCache, r)
+	run(*port, tlsOff, *certCache, r)
 }
 
-func run(p int, d bool, certDir string, router *mux.Router) {
-	if d { // debug
+func run(p int, tlsOff bool, certDir string, router *mux.Router) {
+	if tlsOff { // no TLS
 
 		router.HandleFunc("/v1", handler)
 		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", p), router))
