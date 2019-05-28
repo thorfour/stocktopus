@@ -27,14 +27,14 @@ spec:
       paths:
       - path: /v1
         backend:
-          serviceName: stocktopus-green
+          serviceName: stocktopus-green-srv
           servicePort: 8080
   - host: beta.stocktopus.io
     http:
       paths:
       - path: /v1
         backend:
-          serviceName: stocktopus-blue
+          serviceName: stocktopus-blue-srv
           servicePort: 8080
 ---
 apiVersion: v1
