@@ -34,10 +34,6 @@ func StatsToRows(s *types.Stats) [][]interface{} {
 		{"52WeekLow", s.Week52Low},
 		{"DividendRate", s.DividendRate},
 		{"LatestEPS", s.LatestEPS},
-		{"Revenue", s.Revenue},
-		{"GrossProfit", s.GrossProfit},
-		{"Cash", s.Cash},
-		{"Debt", s.Debt},
 		{"200 SMA", s.Day200MovingAvg},
 		{"50 SMA", s.Day50MovingAvg},
 	}
