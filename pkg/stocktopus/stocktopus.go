@@ -689,6 +689,7 @@ func getStats(text []string, _ url.Values) (string, error) {
 	if len(text) == 1 { // user didn't request specific stats, return all of them
 		rows := stock.StatsToRows(stats)
 		t := gotabulate.Create(rows)
+		t.SetHeaders([]string{"Stat", "Value"})
 		t.SetAlign("left")
 		t.SetHideLines([]string{"bottomLine", "betweenLine", "top"})
 		table := t.Render("simple")

@@ -26,19 +26,19 @@ type Lookup interface {
 }
 
 // StatsToRows converts a stats struct into a label list of printable values
-func StatsToRows(s *types.Stats) []interface{} {
-	return []interface{}{
-		"Marketcap", s.Marketcap,
-		"Beta", s.Beta,
-		"52WeekHigh", s.Week52High,
-		"52WeekLow", s.Week52Low,
-		"DividendRate", s.DividendRate,
-		"LatestEPS", s.LatestEPS,
-		"Revenue", s.Revenue,
-		"GrossProfit", s.GrossProfit,
-		"Cash", s.Cash,
-		"Debt", s.Debt,
-		"200 SMA", s.Day200MovingAvg,
-		"50 SMA", s.Day50MovingAvg,
+func StatsToRows(s *types.Stats) [][]interface{} {
+	return [][]interface{}{
+		{"Marketcap", s.Marketcap},
+		{"Beta", s.Beta},
+		{"52WeekHigh", s.Week52High},
+		{"52WeekLow", s.Week52Low},
+		{"DividendRate", s.DividendRate},
+		{"LatestEPS", s.LatestEPS},
+		{"Revenue", s.Revenue},
+		{"GrossProfit", s.GrossProfit},
+		{"Cash", s.Cash},
+		{"Debt", s.Debt},
+		{"200 SMA", s.Day200MovingAvg},
+		{"50 SMA", s.Day50MovingAvg},
 	}
 }
