@@ -87,12 +87,12 @@ type Stats struct {
 	Week52Low           float64     `json:"week52low"`
 	Week52Change        float64     `json:"week52change"`
 	ShortInterest       float64     `json:"shortInterest"`
-	ShortDate           float64     `json:"shortDate"`
+	ShortDate           interface{} `json:"shortDate"`
 	DividendRate        float64     `json:"dividendRate"`
 	DividendYield       float64     `json:"dividendYield"`
 	ExDividendDate      interface{} `json:"exDividendDate"`
 	LatestEPS           float64     `json:"latestEPS"`
-	LatestEPSDate       string      `json:"latestEPSDate"`
+	LatestEPSDate       interface{} `json:"latestEPSDate"`
 	SharesOutstanding   float64     `json:"sharesOutstanding"`
 	Float               float64     `json:"float"`
 	ReturnOnEquity      float64     `json:"returnOnEquity"`
