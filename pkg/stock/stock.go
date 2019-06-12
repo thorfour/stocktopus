@@ -1,6 +1,7 @@
 package stock
 
 import (
+	"github.com/leekchan/accounting"
 	"github.com/thorfour/iex/pkg/types"
 )
 
@@ -27,8 +28,9 @@ type Lookup interface {
 
 // StatsToRows converts a stats struct into a label list of printable values
 func StatsToRows(s *types.Stats) [][]interface{} {
+	ac := accounting.Accounting{Precision: 2}
 	return [][]interface{}{
-		{"Marketcap", s.Marketcap},
+		{"Marketcap", ac.FormatMoney(s.Marketcap)},
 		{"Beta", s.Beta},
 		{"52WeekHigh", s.Week52High},
 		{"52WeekLow", s.Week52Low},

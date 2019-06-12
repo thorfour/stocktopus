@@ -41,6 +41,14 @@
   version = "v1.7.1"
 
 [[projects]]
+  digest = "1:25e2e1167476b728d2b1fd5d8be3dde6de21ad7469a89aab0353d6dce9c8e998"
+  name = "github.com/leekchan/accounting"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "a35854c075934d6aa1a6c1ab3ea8a82ee0dc1a93"
+  version = "v0.2"
+
+[[projects]]
   digest = "1:0356f3312c9bd1cbeda81505b7fd437501d8e778ab66998ef69f00d7f9b3a0d7"
   name = "github.com/mattn/go-runewidth"
   packages = ["."]
@@ -186,6 +194,7 @@
     "github.com/bndr/gotabulate",
     "github.com/cmckee-dev/go-alpha-vantage",
     "github.com/gorilla/mux",
+    "github.com/leekchan/accounting",
     "github.com/prometheus/client_golang/prometheus",
     "github.com/prometheus/client_golang/prometheus/promauto",
     "github.com/prometheus/client_golang/prometheus/promhttp",
