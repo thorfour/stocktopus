@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	APIVersion = "1.0"
+	APIVersion = "v1"
 	QuoteStr   = "quote"
 	NewsStr    = "news"
 	StatsStr   = "stats"
@@ -17,45 +17,62 @@ const (
 	BatchStr   = "batch"
 	LastStr    = "last"
 	MrktStr    = "market"
-	APIURL     = "https://api.iextrading.com/"
+	APIURL     = "cloud.iexapis.com"
 )
 
 // Quote repesents the format returned for a quote from IEX(https://iextrading.com)
 type Quote struct {
-	Symbol           string  `json:symbol`
-	CompanyName      string  `json:companyName`
-	PrimaryExchange  string  `json:primaryExchange`
-	CalculationPrice string  `json:calculationPrice`
-	IexRealtimePrice float64 `json:iexRealtimePrice`
-	IexRealtimeSize  float64 `json:iexRealtimeSize`
-	IexLastUpdated   float64 `json:iexLastUpdated`
-	DelayedPrice     float64 `json:delayedPrice`
-	DelayedPriceTime float64 `json:delayedPriceTime`
-	PreviousClose    float64 `json:previousClose`
-	Change           float64 `json:change`
-	ChangePercent    float64 `json:changePercent`
-	IexMarketPercent float64 `json:iexMarketPercent`
-	IexVolume        float64 `json:iexVolume`
-	AvgTotalVolume   float64 `json:avgTotalVolume`
-	IexBidPrice      float64 `json:iexBidPrice`
-	IexBidSize       float64 `json:iexBidSize`
-	IexAskPrice      float64 `json:iexAskPrice`
-	IexAskSize       float64 `json:iexAskSize`
-	MarketCap        float64 `json:marketCap`
-	LatestPrice      float64 `json:latestPrice`
-	//PeRatio          float64 `json:peRatio`
-	Week52High float64 `json:week52High`
-	Week52Low  float64 `json:week52Low`
+	Symbol                string  `json:"symbol"`
+	CompanyName           string  `json:"companyName"`
+	CalculationPrice      string  `json:"calculationPrice"`
+	Open                  float64 `json:"open"`
+	OpenTime              int64   `json:"openTime"`
+	Close                 float64 `json:"close"`
+	CloseTime             int64   `json:"closeTime"`
+	High                  float64 `json:"high"`
+	Low                   float64 `json:"low"`
+	LatestPrice           float64 `json:"latestPrice"`
+	LatestSource          string  `json:"latestSource"`
+	LatestTime            string  `json:"latestTime"`
+	LatestUpdate          int64   `json:"latestUpdate"`
+	LatestVolume          int     `json:"latestVolume"`
+	IexRealtimePrice      float64 `json:"iexRealtimePrice"`
+	IexRealtimeSize       int     `json:"iexRealtimeSize"`
+	IexLastUpdated        int64   `json:"iexLastUpdated"`
+	DelayedPrice          float64 `json:"delayedPrice"`
+	DelayedPriceTime      int64   `json:"delayedPriceTime"`
+	ExtendedPrice         float64 `json:"extendedPrice"`
+	ExtendedChange        float64 `json:"extendedChange"`
+	ExtendedChangePercent float64 `json:"extendedChangePercent"`
+	ExtendedPriceTime     int64   `json:"extendedPriceTime"`
+	PreviousClose         float64 `json:"previousClose"`
+	Change                float64 `json:"change"`
+	ChangePercent         float64 `json:"changePercent"`
+	IexMarketPercent      float64 `json:"iexMarketPercent"`
+	IexVolume             int     `json:"iexVolume"`
+	AvgTotalVolume        int     `json:"avgTotalVolume"`
+	IexBidPrice           int     `json:"iexBidPrice"`
+	IexBidSize            int     `json:"iexBidSize"`
+	IexAskPrice           int     `json:"iexAskPrice"`
+	IexAskSize            int     `json:"iexAskSize"`
+	MarketCap             int64   `json:"marketCap"`
+	PeRatio               float64 `json:"peRatio"`
+	Week52High            float64 `json:"week52High"`
+	Week52Low             float64 `json:"week52Low"`
+	YtdChange             float64 `json:"ytdChange"`
 }
 
 // News is the news structure returned from IEX
 type News struct {
-	DateTime string `json:datetime`
-	Headline string `json:headline`
-	Source   string `json:source`
-	URL      string `json:url`
-	Summary  string `json:summar`
-	Related  string `json:related`
+	Datetime   int64  `json:"datetime"`
+	Headline   string `json:"headline"`
+	Source     string `json:"source"`
+	URL        string `json:"url"`
+	Summary    string `json:"summary"`
+	Related    string `json:"related"`
+	Image      string `json:"image"`
+	Lang       string `json:"lang"`
+	HasPaywall bool   `json:"hasPaywall"`
 }
 
 // Batch is a []Quote
@@ -70,12 +87,7 @@ func (i Batch) Quote(ticker string) (Quote, error) {
 		return Quote{}, fmt.Errorf("Failed to find %v in batch request", ticker)
 	}
 
-	q, ok := t[QuoteStr]
-	if !ok {
-		return Quote{}, fmt.Errorf("Failed to find quote for %v in batch request", ticker)
-	}
-
-	return q, nil
+	return t["quote"], nil
 }
 
 // Stats holds information about a companys stats

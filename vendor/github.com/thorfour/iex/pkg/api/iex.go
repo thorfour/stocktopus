@@ -12,8 +12,8 @@ import (
 
 // Quote returns a stock quote for a given ticker
 func Quote(ticker string) (*types.Quote, error) {
-	url := endpoint.API().Stock().Ticker(ticker).Quote()
-	jsonQuote, err := getJSON(url)
+	u := endpoint.Endpoint().Stock().Ticker(ticker).Quote()
+	jsonQuote, err := getJSON(u)
 	if err != nil {
 		return nil, err
 	}
@@ -30,7 +30,7 @@ func Quote(ticker string) (*types.Quote, error) {
 
 // Price returns the current price of a ticker
 func Price(ticker string) (float64, error) {
-	url := endpoint.API().Stock().Ticker(ticker).Price()
+	url := endpoint.Endpoint().Stock().Ticker(ticker).Price()
 	jsonQuote, err := getJSON(url)
 	if err != nil {
 		return -1, err
@@ -47,7 +47,7 @@ func Price(ticker string) (float64, error) {
 // BatchQuotes returns quotes for multiple tickers using a batch request
 func BatchQuotes(tickers []string) (types.Batch, error) {
 
-	url := endpoint.API().Stock().Market().Batch().Symbols().Tickers(tickers).And().Types(types.QuoteStr)
+	url := endpoint.Endpoint().Stock().Market().Batch().Tickers(tickers).Types(types.QuoteStr)
 	jsonQuote, err := getJSON(url)
 	if err != nil {
 		return nil, err
@@ -66,7 +66,7 @@ func BatchQuotes(tickers []string) (types.Batch, error) {
 // News returns the news for a given symbol
 func News(ticker string) ([]types.News, error) {
 
-	url := endpoint.API().Stock().Ticker(ticker).News().Last().Integer(5)
+	url := endpoint.Endpoint().Stock().Ticker(ticker).News().Last().Integer(5)
 	jsonQuote, err := getJSON(url)
 	if err != nil {
 		return nil, err
@@ -85,7 +85,7 @@ func News(ticker string) ([]types.News, error) {
 // Stats returns the stats for a given symbol
 func Stats(ticker string) (*types.Stats, error) {
 
-	url := endpoint.API().Stock().Ticker(ticker).Stats()
+	url := endpoint.Endpoint().Stock().Ticker(ticker).Stats()
 	jsonQuote, err := getJSON(url)
 	if err != nil {
 		return nil, err
@@ -104,7 +104,7 @@ func Stats(ticker string) (*types.Stats, error) {
 // Company returns company info
 func Company(ticker string) (*types.Company, error) {
 
-	url := endpoint.API().Stock().Ticker(ticker).Company()
+	url := endpoint.Endpoint().Stock().Ticker(ticker).Company()
 	jsonQuote, err := getJSON(url)
 	if err != nil {
 		return nil, err
@@ -121,9 +121,8 @@ func Company(ticker string) (*types.Company, error) {
 }
 
 // getJSON returns the JSON response from a url
-func getJSON(url endpoint.APIString) ([]byte, error) {
-
-	resp, err := http.Get(url.String())
+func getJSON(api endpoint.API) ([]byte, error) {
+	resp, err := http.Get(api.String())
 	if err != nil {
 		return nil, err
 	}

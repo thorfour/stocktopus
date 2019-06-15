@@ -2,94 +2,120 @@ package endpoint
 
 import (
 	"fmt"
+	"net/url"
+	"os"
+	"path"
 	"strings"
 
 	"github.com/thorfour/iex/pkg/types"
 )
 
-type APIString string
+// Token used to make API requests
+var Token string
 
-// API returns the url api endpint
-func API() APIString {
-	return types.APIURL + types.APIVersion + "/"
+func init() {
+	Token = os.Getenv("IEX_API_TOKEN")
+}
+
+// API is the wrapper around a IEX URL
+type API struct {
+	u *url.URL
+}
+
+// Endpoint returns the url api endpint
+func Endpoint() *API {
+	return &API{&url.URL{
+		Scheme: "https",
+		Host:   types.APIURL,
+		Path:   types.APIVersion,
+	}}
 }
 
 // Market adds the market type
-func (s APIString) Market() APIString {
-	return APIString(string(s) + types.MrktStr + "/")
+func (u API) Market() API {
+	u.u.Path = path.Join(u.u.Path, types.MrktStr)
+	return u
 }
 
 // Stock adds the stock type
-func (s APIString) Stock() APIString {
-	return APIString(string(s) + types.StockStr + "/")
+func (u API) Stock() API {
+	u.u.Path = path.Join(u.u.Path, types.StockStr)
+	return u
 }
 
 // Quote adds the quote type
-func (s APIString) Quote() APIString {
-	return APIString(string(s) + types.QuoteStr + "/")
+func (u API) Quote() API {
+	u.u.Path = path.Join(u.u.Path, types.QuoteStr)
+	return u
 }
 
 // Ticker adds the ticker
-func (s APIString) Ticker(t string) APIString {
-	return APIString(string(s) + t + "/")
+func (u API) Ticker(ticker string) API {
+	u.u.Path = path.Join(u.u.Path, ticker)
+	return u
 }
 
 // Price adds the price type
-func (s APIString) Price() APIString {
-	return APIString(string(s) + types.PriceStr + "/")
+func (u API) Price() API {
+	u.u.Path = path.Join(u.u.Path, types.PriceStr)
+	return u
 }
 
 // Batch adds the batch type
-func (s APIString) Batch() APIString {
-	return APIString(string(s) + types.BatchStr + "?")
+func (u API) Batch() API {
+	u.u.Path = path.Join(u.u.Path, types.BatchStr)
+	return u
 }
 
 // Tickers adds the tickers as a comma separated list
-func (s APIString) Tickers(t []string) APIString {
-	return APIString(string(s) + strings.Join(t, ","))
-}
-
-// Symbols adds the symbols type
-func (s APIString) Symbols() APIString {
-	return APIString(string(s) + "symbols=")
-}
-
-// And adds the ampersand
-func (s APIString) And() APIString {
-	return APIString(string(s) + "&")
+func (u API) Tickers(t []string) API {
+	q := u.u.Query()
+	q.Add("symbols", strings.Join(t, ","))
+	u.u.RawQuery = q.Encode()
+	return u
 }
 
 // Types adds the types= argument
-func (s APIString) Types(t ...string) APIString {
-	return APIString(string(s) + "types=" + strings.Join(t, ","))
+func (u API) Types(t ...string) API {
+	q := u.u.Query()
+	q.Add("types", strings.Join(t, ","))
+	u.u.RawQuery = q.Encode()
+	return u
 }
 
 // News adds the news type
-func (s APIString) News() APIString {
-	return APIString(string(s) + types.NewsStr + "/")
+func (u API) News() API {
+	u.u.Path = path.Join(u.u.Path, types.NewsStr)
+	return u
 }
 
 // Last adds the last type
-func (s APIString) Last() APIString {
-	return APIString(string(s) + types.LastStr + "/")
+func (u API) Last() API {
+	u.u.Path = path.Join(u.u.Path, types.LastStr)
+	return u
 }
 
 // Integer adds a integer argument
-func (s APIString) Integer(a int) APIString {
-	return APIString(string(s) + fmt.Sprintf("%v", a) + "/")
-}
-
-// String prints the url
-func (s APIString) String() string {
-	return string(s)
+func (u API) Integer(a int) API {
+	u.u.Path = path.Join(u.u.Path, fmt.Sprintf("%v", a))
+	return u
 }
 
 // Stats adds the stats type
-func (s APIString) Stats() APIString {
-	return APIString(string(s) + types.StatsStr + "/")
+func (u API) Stats() API {
+	u.u.Path = path.Join(u.u.Path, types.StatsStr)
+	return u
 }
 
 // Company adds the company type
-func (s APIString) Company() APIString {
-	return APIString(string(s) + types.CompanyStr)
+func (u API) Company() API {
+	u.u.Path = path.Join(u.u.Path, types.CompanyStr)
+	return u
+}
+
+func (u API) String() string {
+	q := u.u.Query()
+	q.Add("token", Token)
+	u.u.RawQuery = q.Encode()
+	return u.u.String()
 }
