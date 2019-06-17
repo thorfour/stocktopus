@@ -49,12 +49,12 @@ type Quote struct {
 	Change                float64 `json:"change"`
 	ChangePercent         float64 `json:"changePercent"`
 	IexMarketPercent      float64 `json:"iexMarketPercent"`
-	IexVolume             int     `json:"iexVolume"`
-	AvgTotalVolume        int     `json:"avgTotalVolume"`
-	IexBidPrice           int     `json:"iexBidPrice"`
-	IexBidSize            int     `json:"iexBidSize"`
-	IexAskPrice           int     `json:"iexAskPrice"`
-	IexAskSize            int     `json:"iexAskSize"`
+	IexVolume             float64 `json:"iexVolume"`
+	AvgTotalVolume        float64 `json:"avgTotalVolume"`
+	IexBidPrice           float64 `json:"iexBidPrice"`
+	IexBidSize            float64 `json:"iexBidSize"`
+	IexAskPrice           float64 `json:"iexAskPrice"`
+	IexAskSize            float64 `json:"iexAskSize"`
 	MarketCap             int64   `json:"marketCap"`
 	PeRatio               float64 `json:"peRatio"`
 	Week52High            float64 `json:"week52High"`
