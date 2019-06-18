@@ -8,9 +8,14 @@ spec:
   selector:
     app: prometheus
   ports:
-  - protocol: TCP
+  - name: grafana
+    protocol: TCP
+    port: 3000
+    targetPort: 3000
+  - name: prom
+    protocol: TCP
     port: 9090
-    targetPort: 9090 
+    targetPort: 9090
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -30,6 +35,10 @@ spec:
         app: prometheus
     spec:
       containers:
+      - name: grafana
+        image: grafana/grafana:6.2.4
+        ports:
+          - containerPort: 3000
       - name: prometheus
         image: quay.io/prometheus/prometheus:v2.10.0
         args:
