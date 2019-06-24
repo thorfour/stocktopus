@@ -16,6 +16,7 @@ import (
 	"github.com/bndr/gotabulate"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	log "github.com/sirupsen/logrus"
 	"github.com/thorfour/stocktopus/pkg/cfg"
 	"github.com/thorfour/stocktopus/pkg/stock"
 )
@@ -251,7 +252,8 @@ func getMultiQuote(text string) ([]*stock.Quote, error) {
 	tickers := strings.Split(text, " ")
 	batch, err := stockInterface.BatchQuotes(tickers)
 	if err != nil {
-		return nil, err
+		log.WithField("tickers", tickers).Error(err.Error())
+		return nil, fmt.Errorf("Failed to get quotes")
 	}
 
 	return batch, nil
@@ -496,7 +498,8 @@ func buyPlay(text []string, decodedMap url.Values) (string, error) {
 	ticker := text[0]
 	price, err := stockInterface.Price(ticker)
 	if err != nil {
-		return "", fmt.Errorf("Unable to get price: %v", err)
+		log.WithField("ticker", ticker).Error(err.Error())
+		return "", fmt.Errorf("Unable to get price")
 	}
 
 	// User and token to be used as lookup
@@ -555,7 +558,8 @@ func sellPlay(text []string, decodedMap url.Values) (string, error) {
 	ticker := text[0]
 	price, err := stockInterface.Price(ticker)
 	if err != nil {
-		return "", fmt.Errorf("Unable to get price: %v", err)
+		log.WithField("ticker", ticker).Error(err.Error())
+		return "", fmt.Errorf("Unable to get price")
 	}
 
 	// User and token to be used as lookup
@@ -683,7 +687,8 @@ func getStats(text []string, _ url.Values) (string, error) {
 
 	stats, err := stockInterface.Stats(text[0])
 	if err != nil {
-		return "", err
+		log.WithField("ticker", text[0]).Error(err.Error())
+		return "", fmt.Errorf("failed to retrieve stats")
 	}
 
 	if len(text) == 1 { // user didn't request specific stats, return all of them

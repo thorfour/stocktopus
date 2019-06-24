@@ -41,6 +41,14 @@
   version = "v1.7.1"
 
 [[projects]]
+  digest = "1:31e761d97c76151dde79e9d28964a812c46efc5baee4085b86f68f0c654450de"
+  name = "github.com/konsorten/go-windows-terminal-sequences"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f55edac94c9bbba5d6182a4be46d86a2c9b5b50e"
+  version = "v1.0.2"
+
+[[projects]]
   digest = "1:25e2e1167476b728d2b1fd5d8be3dde6de21ad7469a89aab0353d6dce9c8e998"
   name = "github.com/leekchan/accounting"
   packages = ["."]
@@ -114,6 +122,14 @@
   revision = "8368d24ba045f26503eb745b624d930cbe214c79"
 
 [[projects]]
+  digest = "1:04457f9f6f3ffc5fea48e71d62f2ca256637dee0a04d710288e27e05c8b41976"
+  name = "github.com/sirupsen/logrus"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "839c75faf7f98a33d445d181f3018b5c3409a45e"
+  version = "v1.4.2"
+
+[[projects]]
   branch = "master"
   digest = "1:0fb4ade5570537d3f6701c95e9835138628c470df9efb6cf60f6303e04d7d2a2"
   name = "github.com/thorfour/iex"
@@ -146,6 +162,14 @@
   ]
   pruneopts = "UT"
   revision = "4829fb13d2c62012c17688fa7f629f371014946d"
+
+[[projects]]
+  branch = "master"
+  digest = "1:d4488b7ca589840d020983978f9f139b89872b90d8a6d725de2fcac6c9448273"
+  name = "golang.org/x/sys"
+  packages = ["unix"]
+  pruneopts = "UT"
+  revision = "c5567b49c5d04a5f83870795b8c0e2df43a8ce32"
 
 [[projects]]
   digest = "1:f4ea3f623a07a2602bb9c1624d6dc7d291261278ba2484508fac559dc7926048"
@@ -198,6 +222,7 @@
     "github.com/prometheus/client_golang/prometheus",
     "github.com/prometheus/client_golang/prometheus/promauto",
     "github.com/prometheus/client_golang/prometheus/promhttp",
+    "github.com/sirupsen/logrus",
     "github.com/thorfour/iex/pkg/api",
     "github.com/thorfour/iex/pkg/types",
     "golang.org/x/crypto/acme/autocert",
