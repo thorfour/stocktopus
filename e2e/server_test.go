@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
-	"time"
 )
 
 // Response is the json struct for a slack response
@@ -18,12 +17,17 @@ type Response struct {
 	Text         string `json:"text"`
 }
 
-func TestSimpleQuote(t *testing.T) {
-	form := url.Values{
-		"text": {"amd"},
-	}
+type Command struct {
+	cmd      string
+	response string
+}
 
-	time.Sleep(time.Second)
+func sendCommand(t *testing.T, c Command) string {
+	form := url.Values{
+		"text":    {c.cmd},
+		"user_id": {"test"},
+		"token":   {"1234abc"},
+	}
 
 	body := bytes.NewBufferString(form.Encode())
 	resp, err := http.Post("http://stocktopus:8080/v1", "application/x-www-form-urlencoded", body)
@@ -42,7 +46,25 @@ func TestSimpleQuote(t *testing.T) {
 		t.Fatalf("failed to unmarshal response: %v", err)
 	}
 
-	if r.ResponseType != "in_channel" {
-		t.Errorf("unexpected response type: %v", r.ResponseType)
+	if r.ResponseType != c.response {
+		t.Errorf("unexpected response type (%s): %s", r.ResponseType, r.Text)
+	}
+
+	return r.Text
+}
+
+func TestSimpleCommands(t *testing.T) {
+	commands := []Command{
+		{"amd goog", "in_channel"},
+		{"news amd", "in_channel"},
+		{"deposit 100000", "ephemeral"},
+		{"buy amd 1", "ephemeral"},
+		{"sell amd 1", "ephemeral"},
+		{"reset", "ephemeral"},
+	}
+	for _, c := range commands {
+		t.Run(c.cmd, func(t *testing.T) {
+			sendCommand(t, c)
+		})
 	}
 }
