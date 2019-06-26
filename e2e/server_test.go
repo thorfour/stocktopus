@@ -64,6 +64,7 @@ func sendCommand(t *testing.T, c Command) string {
 
 func TestSimpleCommands(t *testing.T) {
 	commands := []Command{
+		{"amd", "in_channel", ""},
 		{"amd goog", "in_channel", ""},
 		{"news amd", "in_channel", ""},
 		{"deposit 100000", "ephemeral", "New Balance: 100000"},

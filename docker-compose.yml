@@ -18,8 +18,8 @@ services:
     ports:
       - 8080
     environment:
-      REDISADDR: redis
-      IEX_API_TOKEN: "<iex_api_token>"
+      REDISADDR: "redis:6379"
+      IEX_API_TOKEN: ${IEX_API_TOKEN}
 
   e2e-tests:
     image: golang:1.12.1
