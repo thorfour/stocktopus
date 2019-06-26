@@ -19,3 +19,4 @@ services:
       - 8080
     environment:
       REDISADDR: redis
+      IEX_API_TOKEN: {{.iex_token}}
