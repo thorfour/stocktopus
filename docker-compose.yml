@@ -27,5 +27,5 @@ services:
       - stocktopus
     working_dir: ${PWD}
     volumes:
-      - ./e2e:${PWD}/e2e
+      - ${PWD}:${PWD}
     entrypoint: "go test -v -tags e2e ./..."
