@@ -26,7 +26,7 @@ func TestSimpleQuote(t *testing.T) {
 	time.Sleep(time.Second)
 
 	body := bytes.NewBufferString(form.Encode())
-	resp, err := http.Post("http://localhost:8080/v1", "application/x-www-form-urlencoded", body)
+	resp, err := http.Post("http://stocktopus:8080/v1", "application/x-www-form-urlencoded", body)
 	if err != nil {
 		t.Fatalf("post request failed: %v", err)
 	}
