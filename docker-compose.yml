@@ -19,4 +19,13 @@ services:
       - 8080
     environment:
       REDISADDR: redis
-      IEX_API_TOKEN: {{.iex_token}}
+      IEX_API_TOKEN: "<iex_api_token>"
+
+  e2e-tests:
+    image: golang:1.12.1
+    links:
+      - stocktopus
+    working_dir: ${PWD}
+    volumes:
+      - ./e2e:${PWD}/e2e
+    entrypoint: "go test -v -tags e2e ./..."

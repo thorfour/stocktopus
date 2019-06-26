@@ -1,4 +1,6 @@
-package main
+//+build e2e
+
+package e2e
 
 import (
 	"bytes"
@@ -8,15 +10,15 @@ import (
 	"net/url"
 	"testing"
 	"time"
-
-	"github.com/gorilla/mux"
 )
 
+// Response is the json struct for a slack response
+type Response struct {
+	ResponseType string `json:"response_type"`
+	Text         string `json:"text"`
+}
+
 func TestSimpleQuote(t *testing.T) {
-
-	// Run a debug server
-	go run(8088, true, ".", mux.NewRouter())
-
 	form := url.Values{
 		"text": {"amd"},
 	}
@@ -24,7 +26,7 @@ func TestSimpleQuote(t *testing.T) {
 	time.Sleep(time.Second)
 
 	body := bytes.NewBufferString(form.Encode())
-	resp, err := http.Post("http://localhost:8088/v1", "application/x-www-form-urlencoded", body)
+	resp, err := http.Post("http://localhost:8080/v1", "application/x-www-form-urlencoded", body)
 	if err != nil {
 		t.Fatalf("post request failed: %v", err)
 	}
@@ -35,12 +37,12 @@ func TestSimpleQuote(t *testing.T) {
 		t.Fatalf("failed to read resp body: %v", err)
 	}
 
-	r := new(response)
+	r := new(Response)
 	if err := json.Unmarshal(b, r); err != nil {
 		t.Fatalf("failed to unmarshal response: %v", err)
 	}
 
-	if r.ResponseType != inchannel {
+	if r.ResponseType != "in_channel" {
 		t.Errorf("unexpected response type: %v", r.ResponseType)
 	}
 }
