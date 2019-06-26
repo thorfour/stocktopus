@@ -19,6 +19,7 @@ jobs:
       - run:
           name: e2e
           command: |
+            stat e2e/server_test.go
             docker-compose up e2e-tests
   deploy:
     working_directory: /go/src/github.com/thorfour/stocktopus
