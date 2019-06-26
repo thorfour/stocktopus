@@ -16,6 +16,7 @@ jobs:
             go build ./cmd/rtm/
             go build ./cmd/server
             go test ./...
+      - run:
           name: e2e
           command: docker-compose up e2e-tests
   deploy:
