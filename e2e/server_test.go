@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"regexp"
 	"testing"
 )
 
@@ -20,6 +21,7 @@ type Response struct {
 type Command struct {
 	cmd      string
 	response string
+	match    string
 }
 
 func sendCommand(t *testing.T, c Command) string {
@@ -50,17 +52,24 @@ func sendCommand(t *testing.T, c Command) string {
 		t.Errorf("unexpected response type (%s): %s", r.ResponseType, r.Text)
 	}
 
+	if c.match != "" {
+		ok, err := regexp.MatchString(c.match, r.Text)
+		if !ok || err != nil {
+			t.Errorf("response does not match expectation: %v", r.Text)
+		}
+	}
+
 	return r.Text
 }
 
 func TestSimpleCommands(t *testing.T) {
 	commands := []Command{
-		{"amd goog", "in_channel"},
-		{"news amd", "in_channel"},
-		{"deposit 100000", "ephemeral"},
-		{"buy amd 1", "ephemeral"},
-		{"sell amd 1", "ephemeral"},
-		{"reset", "ephemeral"},
+		{"amd goog", "in_channel", ""},
+		{"news amd", "in_channel", ""},
+		{"deposit 100000", "ephemeral", "New Balance: 100000"},
+		{"buy amd 1", "ephemeral", "Done"},
+		{"sell amd 1", "ephemeral", "Done"},
+		{"reset", "ephemeral", "New Balance: 0"},
 	}
 	for _, c := range commands {
 		t.Run(c.cmd, func(t *testing.T) {
