@@ -19,8 +19,8 @@ jobs:
       - run:
           name: e2e
           command: |
-              PWD=./
-              docker-compose up e2e-tests
+            echo $PWD
+            docker-compose up e2e-tests
   deploy:
     working_directory: /go/src/github.com/thorfour/stocktopus
     docker:
