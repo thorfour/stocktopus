@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+
+  redis:
+    image: redis:5.0.5
+    ports: 
+      - 6379
+
+  stocktopus:
+    image: quay.io/thorfour/stocktopus
+    links:
+      - redis
+    command:
+      - "/server"
+      - "-p=8080"
+      - "-n"
+    ports:
+      - 8080
+    environment:
+      REDISADDR: redis
