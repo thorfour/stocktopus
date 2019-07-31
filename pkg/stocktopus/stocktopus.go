@@ -496,11 +496,14 @@ func buyPlay(text []string, decodedMap url.Values) (string, error) {
 
 	// lookup ticker price
 	ticker := text[0]
-	price, err := stockInterface.Price(ticker)
-	if err != nil {
+
+	batch, err := stockInterface.BatchQuotes([]string{ticker})
+	if err != nil || len(batch) == 0 {
 		log.WithField("ticker", ticker).Error(err.Error())
 		return "", fmt.Errorf("Unable to get price")
 	}
+
+	price := batch[0].LatestPrice
 
 	// User and token to be used as lookup
 	user := decodedMap["user_id"]
@@ -556,11 +559,13 @@ func sellPlay(text []string, decodedMap url.Values) (string, error) {
 
 	// lookup ticker price
 	ticker := text[0]
-	price, err := stockInterface.Price(ticker)
-	if err != nil {
+	batch, err := stockInterface.BatchQuotes([]string{ticker})
+	if err != nil || len(batch) == 0 {
 		log.WithField("ticker", ticker).Error(err.Error())
 		return "", fmt.Errorf("Unable to get price")
 	}
+
+	price := batch[0].LatestPrice
 
 	// User and token to be used as lookup
 	user := decodedMap["user_id"]
