@@ -3,23 +3,19 @@ jobs:
   buildandtest:
     working_directory: /go/src/github.com/thorfour/stocktopus
     docker:
-     - image: circleci/golang:1.11
+     - image: circleci/golang:1.14
     steps:
       - setup_remote_docker
       - checkout
       - run:
           name: build
           command: | 
-            go build ./cmd/awslambda/
-            go build ./cmd/gcpfunction/
-            go build ./cmd/oauth/
-            go build ./cmd/rtm/
-            go build ./cmd/server
-            go test ./...
+            make circle-ci-bin
+            make circle-ci-test
   deploy:
     working_directory: /go/src/github.com/thorfour/stocktopus
     docker:
-     - image: circleci/golang:1.11
+     - image: circleci/golang:1.14
     steps:
       - setup_remote_docker
       - checkout
@@ -27,10 +23,10 @@ jobs:
           name: push docker
           command: |
             mkdir -p ./bin/docker
-            CGO_ENABLED=0 GOOS=linux go build -o ./bin/docker/server ./cmd/server
-            cp /etc/ssl/certs/ca-certificates.crt ./bin/docker/
-            cp ./build/docker/Dockerfile ./bin/docker/
-            docker build ./bin/docker/ -t quay.io/thorfour/stocktopus
+            CGO_ENABLED=0 GOOS=linux go build -o ./bin/docker/stocktopus ./cmd/stocktopus
+            cp /etc/ssl/certs/ca-certificates.crt ./bin/
+            cp ./build/docker/Dockerfile ./bin/
+            docker build ./bin/ -t quay.io/thorfour/stocktopus
             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin quay.io
             docker push quay.io/thorfour/stocktopus
 

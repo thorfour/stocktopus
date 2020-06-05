@@ -33,3 +33,9 @@ clean:
 	rm -r ./bin
 test: 
 	$(go) test -v ./...
+
+# Make targets for circle ci builds
+circle-ci-bin: setup
+	go build -o ./bin/stocktopus ./cmd/stocktopus
+circle-ci-test:
+	go test -v ./...
