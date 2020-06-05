@@ -11,6 +11,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/thorfour/stocktopus/pkg/auth"
 	"github.com/thorfour/stocktopus/pkg/cfg"
 	"github.com/thorfour/stocktopus/pkg/stocktopus"
 )
@@ -53,14 +54,15 @@ func main() {
 }
 
 func run(p int, tlsOff bool, certDir string, router *mux.Router) {
+
+	router.HandleFunc("/v1", handler)
+	router.HandleFunc("/auth", auth.Dummy())
+
 	if tlsOff { // no TLS
 
-		router.HandleFunc("/v1", handler)
 		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", p), router))
 
 	} else {
-
-		router.HandleFunc("/v1", handler)
 
 		m := &autocert.Manager{
 			Prompt:     autocert.AcceptTOS,
