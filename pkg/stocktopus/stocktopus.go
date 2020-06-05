@@ -66,7 +66,7 @@ func init() {
 		clear:          {clearList, "*clear (#list)*              remove entire watch list"},
 
 		// Info actions
-		info:  {getInfo, "*info info [ticker]* print a company profile"},
+		info:  {getInfo, "*info [ticker]* print a company profile"},
 		news:  {getNews, "*news ticker* Displays the latest news for a company"},
 		stats: {getStats, "*stats [ticker] (field options...)* print out statistics for a company"},
 		help:  {printHelp, "*[tickers...]*       pull stock quotes for list of tickers"},

@@ -14,14 +14,17 @@ import (
 
 // fakeLookup implementes the stock.Lookup interface
 type fakeLookup struct {
-	fakeQuotes []*stock.Quote
+	fakeQuotes  []*stock.Quote
+	fakeCompany *types.Company
+	fakeStats   *types.Stats
+	fakeNews    []string
 }
 
 func (f *fakeLookup) Price(string) (float64, error)                { return 0, nil }
 func (f *fakeLookup) BatchQuotes([]string) ([]*stock.Quote, error) { return f.fakeQuotes, nil }
-func (f *fakeLookup) News(string) ([]string, error)                { return nil, nil }
-func (f *fakeLookup) Stats(string) (*types.Stats, error)           { return nil, nil }
-func (f *fakeLookup) Company(string) (*types.Company, error)       { return nil, nil }
+func (f *fakeLookup) News(string) ([]string, error)                { return f.fakeNews, nil }
+func (f *fakeLookup) Stats(string) (*types.Stats, error)           { return f.fakeStats, nil }
+func (f *fakeLookup) Company(string) (*types.Company, error)       { return f.fakeCompany, nil }
 
 func TestCommands(t *testing.T) {
 
@@ -40,6 +43,9 @@ func TestCommands(t *testing.T) {
 				ChangePercent: 0,
 			},
 		},
+		fakeCompany: &types.Company{},
+		fakeStats:   &types.Stats{},
+		fakeNews:    []string{},
 	}
 
 	tests := []struct {
@@ -138,6 +144,18 @@ func TestCommands(t *testing.T) {
 			name: "sell amd",
 			text: "sell amd 1",
 			err:  errors.New("Done"),
+		},
+		{
+			name: "info",
+			text: "info amd",
+		},
+		{
+			name: "stats",
+			text: "stats amd",
+		},
+		{
+			name: "news",
+			text: "news amd",
 		},
 	}
 
