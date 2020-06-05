@@ -35,7 +35,6 @@ func Dummy() http.HandlerFunc {
 		}
 		defer resp.Body.Close()
 
-		w.WriteHeader(http.StatusTemporaryRedirect)
-		w.Write([]byte("https://github.com/thorfour/stocktopus"))
+		http.Redirect(w, req, "https://stocktopus.io", http.StatusTemporaryRedirect)
 	}
 }
