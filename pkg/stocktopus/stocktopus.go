@@ -59,19 +59,24 @@ var (
 // Mapping of command string to function
 func init() {
 	cmds = map[string]cmdInfo{
-		addToList:      {add, "*watch [tickers...]* add tickers to personal watch list"},
-		printList:      {print, "*list*               print out personal watch list"},
-		removeFromList: {remove, "*unwatch [ticker]*   remove single ticker from watch list"},
-		clear:          {clearList, "*clear*              remove entire watch list"},
-		info:           {getInfo, "*info [ticker]* print a company profile"},
-		deposit:        {depositPlay, "*deposit [amount]* deposit amount of play money into account"},
-		reset:          {resetPlay, "*reset* resets account"},
-		portfolio:      {portfolioPlay, "*portfolio* Prints current portfolio of play money"},
-		buy:            {buyPlay, "*buy [ticker shares]* Purchases number of shares in a security with play money"},
-		sell:           {sellPlay, "*sell [ticker shares]* Sells number of shares of specified security"},
-		news:           {getNews, "*ticker* Displays the latest news for a company"},
-		stats:          {getStats, "stats *ticker* [field options...]"},
-		help:           {printHelp, "*[tickers...]*       pull stock quotes for list of tickers"},
+		// List actions
+		addToList:      {add, "*watch (#list) [tickers...]* add tickers to personal watch list"},
+		printList:      {print, "*list (#list)*               print out personal watch list"},
+		removeFromList: {remove, "*unwatch (#list) [ticker]*   remove single ticker from watch list"},
+		clear:          {clearList, "*clear (#list)*              remove entire watch list"},
+
+		// Info actions
+		info:  {getInfo, "*info [ticker]* print a company profile"},
+		news:  {getNews, "*news ticker* Displays the latest news for a company"},
+		stats: {getStats, "*stats [ticker] (field options...)* print out statistics for a company"},
+		help:  {printHelp, "*[tickers...]*       pull stock quotes for list of tickers"},
+
+		// Play money actions
+		deposit:   {depositPlay, "*deposit [amount]* deposit amount of play money into account"},
+		reset:     {resetPlay, "*reset* resets account"},
+		portfolio: {portfolioPlay, "*portfolio* Prints current portfolio of play money"},
+		buy:       {buyPlay, "*buy [ticker] [shares]* Purchases number of shares in a security with play money"},
+		sell:      {sellPlay, "*sell [ticker] [shares]* Sells number of shares of specified security"},
 	}
 }
 

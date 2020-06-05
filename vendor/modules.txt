@@ -1,3 +1,10 @@
+# github.com/alicebob/gopher-json v0.0.0-20200520072559-a9ecdc9d1d3a
+## explicit
+github.com/alicebob/gopher-json
+# github.com/alicebob/miniredis v2.5.0+incompatible
+## explicit
+github.com/alicebob/miniredis
+github.com/alicebob/miniredis/server
 # github.com/beorn7/perks v1.0.0
 ## explicit
 github.com/beorn7/perks/quantile
@@ -7,8 +14,13 @@ github.com/bndr/gotabulate
 # github.com/cmckee-dev/go-alpha-vantage v0.0.0-20190315022515-f8ae72eef75c
 ## explicit
 github.com/cmckee-dev/go-alpha-vantage
+# github.com/davecgh/go-spew v1.1.1
+github.com/davecgh/go-spew/spew
 # github.com/golang/protobuf v1.4.2
 github.com/golang/protobuf/proto
+# github.com/gomodule/redigo v1.8.1
+## explicit
+github.com/gomodule/redigo/redis
 # github.com/gorilla/mux v1.7.1
 ## explicit
 github.com/gorilla/mux
@@ -28,6 +40,8 @@ github.com/matttproud/golang_protobuf_extensions/pbutil
 # github.com/pkg/errors v0.8.1
 ## explicit
 github.com/pkg/errors
+# github.com/pmezard/go-difflib v1.0.0
+github.com/pmezard/go-difflib/difflib
 # github.com/prometheus/client_golang v0.9.2
 ## explicit
 github.com/prometheus/client_golang/prometheus
@@ -48,11 +62,21 @@ github.com/prometheus/procfs
 # github.com/sirupsen/logrus v1.4.2
 ## explicit
 github.com/sirupsen/logrus
+# github.com/stretchr/testify v1.5.1
+## explicit
+github.com/stretchr/testify/assert
+github.com/stretchr/testify/require
 # github.com/thorfour/iex v0.0.0-20190617161349-acf25f2ae6bd
 ## explicit
 github.com/thorfour/iex/pkg/api
 github.com/thorfour/iex/pkg/endpoint
 github.com/thorfour/iex/pkg/types
+# github.com/yuin/gopher-lua v0.0.0-20200603152657-dc2b0ca8b37e
+## explicit
+github.com/yuin/gopher-lua
+github.com/yuin/gopher-lua/ast
+github.com/yuin/gopher-lua/parse
+github.com/yuin/gopher-lua/pm
 # golang.org/x/crypto v0.0.0-20190422183909-d864b10871cd
 ## explicit
 golang.org/x/crypto/acme
@@ -105,3 +129,5 @@ gopkg.in/redis.v5/internal/consistenthash
 gopkg.in/redis.v5/internal/hashtag
 gopkg.in/redis.v5/internal/pool
 gopkg.in/redis.v5/internal/proto
+# gopkg.in/yaml.v2 v2.3.0
+gopkg.in/yaml.v2
