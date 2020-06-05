@@ -8,7 +8,7 @@
 <img src="stocktopus_cropped.png" height="285" width="132"/>
 
 # stocktopus
-Simple Slack bot that posts stock prices. It can be build as an RTM Slack bot, or a slash command bot that loads into aws lambda
+Simple Slack bot that posts stock prices, manages play money portfolios and watch lists. 
 
 ## Download
 
@@ -23,31 +23,13 @@ If you'd like to deploy your own version of stocktopus to DigitalOcean cloud the
 
 ## Build
 
+make
+
 ### Docker:
 
 make docker
 
-### AWS Lambda:
-
-`make aws`
-
-### GCP Cloud Function (under development):
-
-`make gcp`
-
-### RTM Client (no longer actively developed):
-
-`make rtm`
-
-### Files should be output to bin/ directories.
-
-### Serverless:
-
-`bin/aws or bin/gcp` which will contain the binary and the zip file of the nodejs handler and binary.
-
-### Rtm:
-
-`bin/rtm` for the rtm client
+### Binaries should be output to bin/ directories.
 
 ## Run
 `docker run -d -p 80:80 -p 443:443 -e REDISADDR=<redis endpoint> -e REDISPW=<redis password> quay.io/thorfour/stocktopus:v1.0.0`
