@@ -11,6 +11,17 @@ import (
 	"testing"
 )
 
+// response is the json struct for a slack response
+type response struct {
+	ResponseType string `json:"response_type"`
+	Text         string `json:"text"`
+}
+
+const (
+	ephemeral = "ephemeral"
+	inchannel = "in_channel"
+)
+
 func TestLiveRequest(t *testing.T) {
 
 	form := url.Values{
