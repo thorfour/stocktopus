@@ -100,6 +100,45 @@ func TestCommands(t *testing.T) {
 			text: "clear #mylist",
 			err:  errors.New("Removed"),
 		},
+		{
+			name: "deposit",
+			text: "deposit 100",
+			err:  errors.New("New Balance: 100"),
+		},
+		{
+			name: "reset",
+			text: "reset",
+			err:  errors.New("New Balance: 0"),
+		},
+		{
+			name: "portfolio",
+			text: "portfolio",
+		},
+		{
+			name: "buy insufficient",
+			text: "buy amd 1",
+			err:  errors.New("Insufficient funds"),
+		},
+		{
+			name: "deposit 1k",
+			text: "deposit 1000",
+			err:  errors.New("New Balance: 1000"),
+		},
+		{
+			name: "buy amd",
+			text: "buy amd 1",
+			err:  errors.New("Done"),
+		},
+		{
+			name: "sell amd too many",
+			text: "sell amd 10",
+			err:  errors.New("Not enough shares"),
+		},
+		{
+			name: "sell amd",
+			text: "sell amd 1",
+			err:  errors.New("Done"),
+		},
 	}
 
 	for _, test := range tests {
