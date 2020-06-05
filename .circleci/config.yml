@@ -22,11 +22,10 @@ jobs:
       - run:
           name: push docker
           command: |
-            mkdir -p ./bin/docker
-            CGO_ENABLED=0 GOOS=linux go build -o ./bin/docker/stocktopus ./cmd/stocktopus
+            make circle-ci-bin
             cp /etc/ssl/certs/ca-certificates.crt ./bin/
             cp ./build/docker/Dockerfile ./bin/
-            docker build ./bin/ -t quay.io/thorfour/stocktopus
+            docker build . -t quay.io/thorfour/stocktopus
             echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin quay.io
             docker push quay.io/thorfour/stocktopus
 

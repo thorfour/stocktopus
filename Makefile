@@ -33,9 +33,12 @@ clean:
 	rm -r ./bin
 test: 
 	$(go) test -v ./...
+push:
+	echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_USERNAME) --password-stdin quay.io
+	docker push quay.io/thorfour/stocktopus
 
 # Make targets for circle ci builds
 circle-ci-bin: setup
-	go build -o ./bin/stocktopus ./cmd/stocktopus
+	CGO_ENABLED=0 GOOS=linux go build -o ./bin/stocktopus ./cmd/stocktopus
 circle-ci-test:
 	go test -v ./...
