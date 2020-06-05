@@ -23,19 +23,23 @@ bin-alpha:
 	$(go) build -tags ALPHA -o ./bin/stocktopus ./cmd/server
 docker: bin
 	cp /etc/ssl/certs/ca-certificates.crt ./bin/
-	cp ./build/docker/Dockerfile ./bin/
-	docker build ./bin/ -t quay.io/thorfour/stocktopus
+	docker build . -t quay.io/thorfour/stocktopus
 docker-alpha: bin-alpha 
 	cp /etc/ssl/certs/ca-certificates.crt ./bin/
-	cp ./build/docker/Dockerfile ./bin/
-	docker build ./bin/ -t quay.io/thorfour/stocktopus
+	docker build . -t quay.io/thorfour/stocktopus
 clean:
 	rm -r ./bin
 test: 
 	$(go) test -v ./...
+push:
+	echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_USERNAME) --password-stdin quay.io
+	docker push quay.io/thorfour/stocktopus
 
 # Make targets for circle ci builds
 circle-ci-bin: setup
-	go build -o ./bin/stocktopus ./cmd/stocktopus
+	CGO_ENABLED=0 GOOS=linux go build -o ./bin/stocktopus ./cmd/stocktopus
 circle-ci-test:
 	go test -v ./...
+circle-ci-docker: circle-ci-bin
+	cp /etc/ssl/certs/ca-certificates.crt ./bin/
+	docker build . -t quay.io/thorfour/stocktopus
