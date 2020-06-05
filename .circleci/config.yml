@@ -22,12 +22,8 @@ jobs:
       - run:
           name: push docker
           command: |
-            make circle-ci-bin
-            cp /etc/ssl/certs/ca-certificates.crt ./bin/
-            cp ./build/docker/Dockerfile ./bin/
-            docker build . -t quay.io/thorfour/stocktopus
-            echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin quay.io
-            docker push quay.io/thorfour/stocktopus
+            make circle-ci-docker
+            make push
 
 workflows:
   version: 2

@@ -19,7 +19,7 @@ Simple Slack bot that posts stock prices, manages play money portfolios and watc
 
 ## Deploy
 
-If you'd like to deploy your own version of stocktopus to DigitalOcean cloud there are [terraform](https://www.terraform.io/) files provided in `build/terraform`, simply run `terraform apply`. You'll need to provide a do api key and provide your own hostname. 
+If you'd like to deploy your own version of stocktopus to DigitalOcean cloud there are [terraform](https://www.terraform.io/) files provided in `deploy/terraform`, simply run `terraform apply`. You'll need to provide a do api key and provide your own hostname. 
 
 ## Build
 
