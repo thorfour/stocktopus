@@ -2,7 +2,6 @@ package stocktopus
 
 import (
 	"errors"
-	"fmt"
 	"net/url"
 	"testing"
 
@@ -43,29 +42,48 @@ func TestCommands(t *testing.T) {
 		},
 	}
 
-	tests := map[string]struct {
+	tests := []struct {
+		name string
 		text string
 		err  error
 	}{
-		"single quote": {
+		{
+			name: "single quote",
 			text: "amd",
 			err:  nil,
 		},
-		"add to group list": {
+		{
+			name: "retrieve empty group list",
+			text: "list #mylist",
+			err:  errors.New("Error: No List"),
+		},
+		{
+			name: "retrieve empty list",
+			text: "list",
+			err:  errors.New("Error: No List"),
+		},
+		{
+			name: "add to group list",
 			text: "watch #mylist amd",
 			err:  errors.New("Added"),
 		},
-		"add to list": {
+		{
+			name: "add to list",
 			text: "watch amd",
 			err:  errors.New("Added"),
 		},
-		"retrieve list": {
+		{
+			name: "retrieve group list",
 			text: "list #mylist",
+		},
+		{
+			name: "retrieve list",
+			text: "list",
 		},
 	}
 
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			v := url.Values{}
 			v.Add("user_id", "test")
 			v.Add("token", "token")
@@ -75,7 +93,4 @@ func TestCommands(t *testing.T) {
 			require.Equal(t, test.err, err)
 		})
 	}
-
-	client := connectRedis()
-	fmt.Println(client.Keys("*").String())
 }
