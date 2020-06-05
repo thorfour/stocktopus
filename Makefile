@@ -22,10 +22,8 @@ bin: setup
 bin-alpha:
 	$(go) build -tags ALPHA -o ./bin/stocktopus ./cmd/server
 docker: bin
-	cp /etc/ssl/certs/ca-certificates.crt ./bin/
 	docker build . -t quay.io/thorfour/stocktopus
 docker-alpha: bin-alpha 
-	cp /etc/ssl/certs/ca-certificates.crt ./bin/
 	docker build . -t quay.io/thorfour/stocktopus
 clean:
 	rm -r ./bin
@@ -41,5 +39,4 @@ circle-ci-bin: setup
 circle-ci-test:
 	go test -v ./...
 circle-ci-docker: circle-ci-bin
-	cp /etc/ssl/certs/ca-certificates.crt ./bin/
 	docker build . -t quay.io/thorfour/stocktopus
