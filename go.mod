@@ -6,12 +6,11 @@ require (
 	github.com/beorn7/perks v1.0.0 // indirect
 	github.com/bndr/gotabulate v1.1.3-0.20170315142410-bc555436bfd5
 	github.com/cmckee-dev/go-alpha-vantage v0.0.0-20190315022515-f8ae72eef75c
-	github.com/golang/protobuf v1.3.1 // indirect
 	github.com/gorilla/mux v1.7.1
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
 	github.com/leekchan/accounting v0.0.0-20161211142212-a35854c07593
 	github.com/mattn/go-runewidth v0.0.4 // indirect
-	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect
+	github.com/onsi/ginkgo v1.12.3 // indirect
 	github.com/pkg/errors v0.8.1 // indirect
 	github.com/prometheus/client_golang v0.9.2
 	github.com/prometheus/client_model v0.0.0-20190129233127-fd36f4220a90 // indirect
@@ -20,8 +19,6 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/thorfour/iex v0.0.0-20190617161349-acf25f2ae6bd
 	golang.org/x/crypto v0.0.0-20190422183909-d864b10871cd
-	golang.org/x/net v0.0.0-20190424112056-4829fb13d2c6
-	golang.org/x/sys v0.0.0-20190624142023-c5567b49c5d0 // indirect
-	golang.org/x/text v0.3.1 // indirect
+	golang.org/x/net v0.0.0-20200520004742-59133d7f0dd7
 	gopkg.in/redis.v5 v5.2.9
 )
