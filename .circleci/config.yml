@@ -22,8 +22,12 @@ jobs:
       - run:
           name: push docker
           command: |
+<<<<<<< HEAD
             make circle-ci-bin
             make docker
+=======
+            make circle-ci-docker
+>>>>>>> 1678b4279c9edb5062df9d4b1ffc718ba7b2f278
             make push
 
 workflows:
