@@ -80,6 +80,26 @@ func TestCommands(t *testing.T) {
 			name: "retrieve list",
 			text: "list",
 		},
+		{
+			name: "unwatch list",
+			text: "unwatch amd",
+			err:  errors.New("Removed"),
+		},
+		{
+			name: "unwatch group list",
+			text: "unwatch #mylist amd",
+			err:  errors.New("Removed"),
+		},
+		{
+			name: "clear list",
+			text: "clear",
+			err:  errors.New("Removed"),
+		},
+		{
+			name: "clear group list",
+			text: "clear #mylist",
+			err:  errors.New("Removed"),
+		},
 	}
 
 	for _, test := range tests {
