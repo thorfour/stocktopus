@@ -136,6 +136,10 @@ func TestCommands(t *testing.T) {
 			err:  errors.New("Done"),
 		},
 		{
+			name: "portfolio with holdings",
+			text: "portfolio",
+		},
+		{
 			name: "sell amd too many",
 			text: "sell amd 10",
 			err:  errors.New("Not enough shares"),
@@ -152,6 +156,10 @@ func TestCommands(t *testing.T) {
 		{
 			name: "stats",
 			text: "stats amd",
+		},
+		{
+			name: "stats with filter",
+			text: "stats amd beta",
 		},
 		{
 			name: "news",
