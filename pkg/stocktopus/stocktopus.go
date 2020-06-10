@@ -89,12 +89,22 @@ func measureTime(start time.Time, label string) {
 
 // Process url string to provide stocktpus functionality
 func Process(args url.Values) (string, error) {
+	s := &Stocktopus{}
 	text, ok := args["text"]
 	if !ok {
 		return "", errors.New("Bad request")
 	}
 
 	text = strings.Split(strings.ToUpper(text[0]), " ")
+	switch text[0] {
+	case buy:
+		s.Buy("", 0, "")
+	case sell:
+	case deposit:
+	case portfolio:
+	case reset:
+	}
+
 	cmd, ok := cmds[text[0]]
 	if !ok {
 		return getQuotes(args["text"][0], args)
@@ -125,21 +135,7 @@ func add(text []string, decodedMap url.Values) (string, error) {
 
 	key := fmt.Sprintf("%v%v", token, user)
 
-	rClient := connectRedis()
-
-	// Convert []string to []interface{} for the SAdd call
-	members := []interface{}{}
-	for _, member := range text {
-		members = append(members, interface{}(member))
-	}
-
-	_, err := rClient.SAdd(key, members...).Result()
-	if err != nil {
-		return "", fmt.Errorf("Error addtolist: %v", err)
-	}
-
-	// Not an error but message of Added should be supressed
-	return "", errors.New("Added")
+	return Add(text, key)
 }
 
 // Print out a watchlist
