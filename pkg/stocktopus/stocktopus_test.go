@@ -67,12 +67,12 @@ func TestCommands(t *testing.T) {
 		{
 			name: "retrieve empty group list",
 			text: "list #mylist",
-			err:  errors.New("Error: No List"),
+			err:  errors.New("No List"),
 		},
 		{
 			name: "retrieve empty list",
 			text: "list",
-			err:  errors.New("Error: No List"),
+			err:  errors.New("No List"),
 		},
 		{
 			name: "add to group list",
