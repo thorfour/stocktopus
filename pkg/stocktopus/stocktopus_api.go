@@ -189,6 +189,7 @@ func (s *Stocktopus) Latest(ctx context.Context, acct *Account) (*Account, error
 	}
 
 	// Populate latest prices
+	acct.Latest = map[string]float64{}
 	for _, q := range quotes {
 		acct.Latest[q.Ticker] = q.LatestPrice
 	}

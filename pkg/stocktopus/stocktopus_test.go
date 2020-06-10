@@ -1,6 +1,7 @@
 package stocktopus
 
 import (
+	"context"
 	"errors"
 	"net/url"
 	"testing"
@@ -173,4 +174,81 @@ func TestCommands(t *testing.T) {
 			require.Equal(t, test.err, err)
 		})
 	}
+}
+
+func TestAccount(t *testing.T) {
+
+	// Start mini redis instance to connect to
+	mr, err := miniredis.Run()
+	require.NoError(t, err)
+	defer mr.Close()
+	cfg.RedisAddr = mr.Addr()
+
+	s := &Stocktopus{
+		kvstore: redis.NewClient(&redis.Options{
+			Addr: mr.Addr(),
+		}),
+		stockInterface: &fakeLookup{
+			fakeQuotes: []*stock.Quote{
+				{
+					Ticker:        "AMD",
+					LatestPrice:   1.00,
+					Change:        0,
+					ChangePercent: 0,
+				},
+			},
+			fakeCompany: &types.Company{},
+			fakeStats:   &types.Stats{},
+			fakeNews:    []string{},
+		},
+	}
+
+	ctx := context.Background()
+	a, err := s.Deposit(ctx, 1000, "mykey")
+	require.NoError(t, err)
+	require.Equal(t, &Account{
+		Balance:  1000,
+		Holdings: map[string]Holding{},
+	}, a)
+
+	require.Equal(t, "Balance: $1000.00", a.String())
+
+	a, err = s.Buy(ctx, "AMD", 1, "mykey")
+	require.NoError(t, err)
+	require.Equal(t, &Account{
+		Balance: 999,
+		Holdings: map[string]Holding{
+			"AMD": {
+				Strike: 1,
+				Shares: 1,
+			},
+		},
+	}, a)
+
+	a, err = s.Latest(ctx, a)
+	require.NoError(t, err)
+	require.Equal(t, &Account{
+		Balance: 999,
+		Holdings: map[string]Holding{
+			"AMD": {
+				Strike: 1,
+				Shares: 1,
+			},
+		},
+		Latest: map[string]float64{
+			"AMD": 1.00,
+		},
+	}, a)
+
+	exp :=
+		` Ticker       Shares       Strike       Current       Gain/Loss $    
+-----------  -----------  -----------  ------------  ----------------
+ AMD          1            1            1             0.00           
+ Total        ---          ---          ---           0.00           
+
+Portfolio Value: $1.00
+Balance: $999.00
+Total: $1000.00`
+
+	require.Equal(t, exp, a.String())
 }

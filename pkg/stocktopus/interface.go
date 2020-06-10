@@ -72,7 +72,7 @@ type Holding struct {
 }
 
 func (a *Account) String() string {
-	if len(a.Holdings) <= 0 {
+	if len(a.Holdings) <= 0 || len(a.Latest) <= 0 {
 		return fmt.Sprintf("Balance: $%0.2f", a.Balance)
 	}
 

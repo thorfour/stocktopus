@@ -67,32 +67,46 @@ func (s *Stocktopus) Command(ctx context.Context, cmd string, args []string, inf
 		if err != nil {
 			return "", err
 		}
-		return "", s.Buy(ctx, args[0], uint64(shares), acctKey(info))
+		a, err := s.Buy(ctx, args[0], uint64(shares), acctKey(info))
+		if err != nil {
+			return "", err
+		}
+
+		return a.String(), nil
 	case sell:
 		shares, err := strconv.Atoi(args[1])
 		if err != nil {
 			return "", err
 		}
-		return "", s.Sell(ctx, args[0], uint64(shares), acctKey(info))
+		a, err := s.Sell(ctx, args[0], uint64(shares), acctKey(info))
+		if err != nil {
+			return "", err
+		}
+
+		return a.String(), nil
 	case deposit:
 		amount, err := strconv.Atoi(args[0])
 		if err != nil {
 			return "", err
 		}
-		_, err = s.Deposit(ctx, float64(amount), acctKey(info))
+		a, err := s.Deposit(ctx, float64(amount), acctKey(info))
 		if err != nil {
 			return "", err
 		}
 
-		return "", nil // TODO
+		return a.String(), nil
 	case portfolio:
-		_, err := s.Portfolio(ctx, acctKey(info))
+		a, err := s.Portfolio(ctx, acctKey(info))
 		if err != nil {
 			return "", err
 		}
 
-		return "", err
-		//return acct.String(), err // TODO need to load acct wl
+		a, err = s.Latest(ctx, a)
+		if err != nil {
+			return "", err
+		}
+
+		return a.String(), nil
 	case reset:
 		return "", s.Clear(ctx, acctKey(info))
 	case addToList:
