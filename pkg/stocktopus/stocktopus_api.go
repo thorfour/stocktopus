@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/thorfour/iex/pkg/types"
 	"github.com/thorfour/stocktopus/pkg/stock"
@@ -256,12 +257,7 @@ func (s *Stocktopus) getQuotes(tickers []string) (WatchList, error) {
 	return WatchList(quotes), nil
 }
 
-func (s *Stocktopus) getChartLink(ticker string) (string, error) {
-
-	chartlink, err := getChartLinkFinviz(ticker)
-	if err != nil {
-		return "", fmt.Errorf("getChartLinkFinviz: %w", err)
-	}
-
-	return chartlink, nil
+func (s *Stocktopus) getChartLink(ticker string) string {
+	symbol := strings.ToUpper(ticker)
+	return fmt.Sprintf("http://finviz.com/chart.ashx?t=%s&ty=c&ta=1&p=d&s=l", symbol)
 }
