@@ -146,13 +146,5 @@ google.golang.org/protobuf/reflect/protoreflect
 google.golang.org/protobuf/reflect/protoregistry
 google.golang.org/protobuf/runtime/protoiface
 google.golang.org/protobuf/runtime/protoimpl
-# gopkg.in/redis.v5 v5.2.9
-## explicit
-gopkg.in/redis.v5
-gopkg.in/redis.v5/internal
-gopkg.in/redis.v5/internal/consistenthash
-gopkg.in/redis.v5/internal/hashtag
-gopkg.in/redis.v5/internal/pool
-gopkg.in/redis.v5/internal/proto
 # gopkg.in/yaml.v2 v2.3.0
 gopkg.in/yaml.v2
