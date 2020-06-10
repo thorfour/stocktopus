@@ -70,7 +70,7 @@ func (s *Stocktopus) Remove(ctx context.Context, tickers []string, key string) e
 	return nil
 }
 
-// Clear a watchlist by deleting the key from the kvstore
+// Clear a watchlist or account by deleting the key from the kvstore
 func (s *Stocktopus) Clear(ctx context.Context, key string) error {
 	if _, err := s.kvstore.Del(ctx, key).Result(); err != nil {
 		return fmt.Errorf("Del failed: %w", err)
