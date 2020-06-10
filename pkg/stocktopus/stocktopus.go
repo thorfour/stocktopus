@@ -20,7 +20,7 @@ const (
 	removeFromList = "UNWATCH"
 	clear          = "CLEAR"
 	help           = "HELP"
-	info           = "INFO"
+	infoCmd        = "INFO"
 	news           = "NEWS"
 	stats          = "STATS"
 
@@ -45,6 +45,7 @@ func measureTime(start time.Time, label string) {
 }
 
 // Process url string to provide stocktpus functionality
+// TODO this should get lifted out
 func (s *Stocktopus) Process(args url.Values) (string, error) {
 	ctx := context.Background() // TODO
 	text, ok := args["text"]
@@ -53,32 +54,39 @@ func (s *Stocktopus) Process(args url.Values) (string, error) {
 	}
 
 	text = strings.Split(strings.ToUpper(text[0]), " ")
-	switch text[0] {
+	return s.Command(ctx, text[0], text[1:], args)
+}
+
+// Command processes a stocktopus command
+// TODO this should get lifted out
+func (s *Stocktopus) Command(ctx context.Context, cmd string, args []string, info map[string][]string) (string, error) {
+
+	switch cmd {
 	case buy:
-		shares, err := strconv.Atoi(text[2])
+		shares, err := strconv.Atoi(args[1])
 		if err != nil {
 			return "", err
 		}
-		return "", s.Buy(ctx, text[1], uint64(shares), acctKey(args))
+		return "", s.Buy(ctx, args[0], uint64(shares), acctKey(info))
 	case sell:
-		shares, err := strconv.Atoi(text[2])
+		shares, err := strconv.Atoi(args[1])
 		if err != nil {
 			return "", err
 		}
-		return "", s.Sell(ctx, text[1], uint64(shares), acctKey(args))
+		return "", s.Sell(ctx, args[0], uint64(shares), acctKey(info))
 	case deposit:
-		amount, err := strconv.Atoi(text[1])
+		amount, err := strconv.Atoi(args[0])
 		if err != nil {
 			return "", err
 		}
-		_, err = s.Deposit(ctx, float64(amount), acctKey(args))
+		_, err = s.Deposit(ctx, float64(amount), acctKey(info))
 		if err != nil {
 			return "", err
 		}
 
 		return "", nil // TODO
 	case portfolio:
-		_, err := s.Portfolio(ctx, acctKey(args))
+		_, err := s.Portfolio(ctx, acctKey(info))
 		if err != nil {
 			return "", err
 		}
@@ -86,43 +94,43 @@ func (s *Stocktopus) Process(args url.Values) (string, error) {
 		return "", err
 		//return acct.String(), err // TODO need to load acct wl
 	case reset:
-		return "", s.Clear(ctx, acctKey(args))
+		return "", s.Clear(ctx, acctKey(info))
 	case addToList:
-		return "", s.Add(ctx, text[1:], listkey(text[1:], args))
+		return "", s.Add(ctx, args, listkey(args, info))
 	case printList:
-		acct, err := s.Print(ctx, listkey(text[1:], args))
+		acct, err := s.Print(ctx, listkey(args, info))
 		if err != nil {
 			return "", err
 		}
 
 		return acct.String(), nil
 	case removeFromList:
-		return "", s.Remove(ctx, text[1:], listkey(text[1:], args))
+		return "", s.Remove(ctx, args, listkey(args, info))
 	case clear:
-		return "", s.Clear(ctx, listkey(text[1:], args))
-	case info:
-		c, err := s.Info(text[1])
+		return "", s.Clear(ctx, listkey(args, info))
+	case infoCmd:
+		c, err := s.Info(args[0])
 		if err != nil {
 			return "", err
 		}
 
 		return fmt.Sprintf("%v", c), nil // TODO
 	case news:
-		news, err := s.News(text[1])
+		news, err := s.News(args[0])
 		if err != nil {
 			return "", err
 		}
 
 		return strings.Join(news, "\n"), nil
 	case stats:
-		stats, err := s.Stats(text[1])
+		stats, err := s.Stats(args[0])
 		if err != nil {
 			return "", err
 		}
 
 		return fmt.Sprintf("%v", stats), nil
 	default:
-		wl, err := s.getQuotes(text)
+		wl, err := s.getQuotes(args)
 		if err != nil {
 			return "", err
 		}
