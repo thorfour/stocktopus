@@ -90,7 +90,6 @@ func (s *Stocktopus) Clear(ctx context.Context, key string) error {
 func (s *Stocktopus) Deposit(ctx context.Context, amount float64, key string) (*Account, error) {
 	acct, err := s.account(ctx, key)
 	if err != nil {
-		// TODO check for no key, because we want to open an account if there isn't one
 		return nil, err
 	}
 
