@@ -201,7 +201,7 @@ func (s *Stocktopus) News(ticker string) ([]string, error) {
 }
 
 // Stats returns company statistics
-func (s *Stocktopus) Stats(ticker string, filters ...func(string) bool) (*types.Stats, error) {
+func (s *Stocktopus) Stats(ticker string) (*types.Stats, error) {
 	stats, err := s.stockInterface.Stats(ticker)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get stats: %w", err)

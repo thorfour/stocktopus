@@ -10,9 +10,6 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/thorfour/stocktopus/pkg/cfg"
-	"github.com/thorfour/stocktopus/pkg/stock"
-	"gopkg.in/redis.v5"
 )
 
 // Supported commands
@@ -29,7 +26,6 @@ const (
 	// Play money commands
 	buy       = "BUY"
 	sell      = "SELL"
-	short     = "SHORT"
 	deposit   = "DEPOSIT"
 	portfolio = "PORTFOLIO"
 	reset     = "RESET"
@@ -48,15 +44,7 @@ func measureTime(start time.Time, label string) {
 }
 
 // Process url string to provide stocktpus functionality
-func Process(args url.Values) (string, error) {
-	s := &Stocktopus{ // TODO lift this out
-		kvstore: redis.NewClient(&redis.Options{
-			Addr:     cfg.RedisAddr,
-			Password: cfg.RedisPw,
-			DB:       0,
-		}),
-		stockInterface: &stock.IexWrapper{},
-	}
+func (s *Stocktopus) Process(args url.Values) (string, error) {
 	text, ok := args["text"]
 	if !ok {
 		return "", errors.New("Bad request")
@@ -77,20 +65,55 @@ func Process(args url.Values) (string, error) {
 		}
 		s.Sell(text[1], uint64(shares), acctKey(args))
 	case deposit:
-		amount, err := strconv.Atoi(text[0])
+		amount, err := strconv.Atoi(text[1])
 		if err != nil {
 			return "", err
 		}
 		s.Deposit(float64(amount), acctKey(args))
 	case portfolio:
-		acct, err := s.Portfolio(acctKey(args))
+		_, err := s.Portfolio(acctKey(args))
 		if err != nil {
 			return "", err
 		}
 
-		return acct.String(), err
+		return "", err
+		//return acct.String(), err // TODO need to load acct wl
 	case reset:
 		return "", s.Clear(acctKey(args))
+	case addToList:
+		return "", s.Add(text[1:], listkey(text[1:], args))
+	case printList:
+		acct, err := s.Print(listkey(text[1:], args))
+		if err != nil {
+			return "", err
+		}
+
+		return acct.String(), nil
+	case removeFromList:
+		return "", s.Remove(text[1:], listkey(text[1:], args))
+	case clear:
+		return "", s.Clear(listkey(text[1:], args))
+	case info:
+		c, err := s.Info(text[1])
+		if err != nil {
+			return "", err
+		}
+
+		return fmt.Sprintf("%v", c), nil // TODO
+	case news:
+		news, err := s.News(text[1])
+		if err != nil {
+			return "", err
+		}
+
+		return strings.Join(news, "\n"), nil
+	case stats:
+		stats, err := s.Stats(text[1])
+		if err != nil {
+			return "", err
+		}
+
+		return fmt.Sprintf("%v", stats), nil
 	default:
 		wl, err := s.getQuotes(text)
 		if err != nil {
