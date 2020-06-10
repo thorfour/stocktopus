@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/thorfour/stocktopus/pkg/stock"
 	redis "gopkg.in/redis.v5"
@@ -39,19 +40,18 @@ func (s *Stocktopus) Add(tickers []string, key string) error {
 	return nil
 }
 
-// Print returns a string representation of a watchlist
-// TODO should it just return a struct that is a watchlist?
-func (s *Stocktopus) Print(key string) (string, error) {
+// Print returns a watchlist
+func (s *Stocktopus) Print(key string) (WatchList, error) {
 	list, err := s.kvstore.SMembers(key).Result()
 	if err != nil {
-		return "", fmt.Errorf("SMembers failed: %w", err)
+		return nil, fmt.Errorf("SMembers failed: %w", err)
 	}
 
 	if len(list) == 0 {
-		return "", fmt.Errorf("No List")
+		return nil, fmt.Errorf("No List")
 	}
 
-	return getQuotes(list)
+	return s.getQuotes(list)
 }
 
 // Remove ticker(s) from a watch list
@@ -199,4 +199,26 @@ func (s *Stocktopus) saveAccount(key string, acct *account) error {
 	}
 
 	return nil
+}
+
+func (s *Stocktopus) getQuotes(tickers []string) (WatchList, error) {
+	quotes, err := s.stockInterface.BatchQuotes(tickers)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sort the list
+	sort.Sort(WatchList(quotes))
+
+	return WatchList(quotes), nil
+}
+
+func (s *Stocktopus) getChartLink(ticker string) (string, error) {
+
+	chartlink, err := getChartLinkFinviz(ticker)
+	if err != nil {
+		return "", fmt.Errorf("getChartLinkFinviz: %w", err)
+	}
+
+	return chartlink, nil
 }
