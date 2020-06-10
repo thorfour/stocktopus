@@ -104,76 +104,96 @@ func (s *Stocktopus) Deposit(ctx context.Context, amount float64, key string) (*
 }
 
 // Buy shares for play money portfolio
-func (s *Stocktopus) Buy(ctx context.Context, ticker string, shares uint64, key string) error {
+func (s *Stocktopus) Buy(ctx context.Context, ticker string, shares uint64, key string) (*Account, error) {
 
 	price, err := s.stockInterface.Price(ticker)
 	if err != nil {
-		return fmt.Errorf("quote failed: %w", err)
+		return nil, fmt.Errorf("quote failed: %w", err)
 	}
 
 	acct, err := s.account(ctx, key)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if acct.Balance < (price * float64(shares)) {
-		return errors.New("Insufficient funds")
+		return nil, errors.New("Insufficient funds")
 	}
 
 	// Add to account
 	acct.Balance -= (price * float64(shares))
-	h, ok := acct.Holdings[ticker]
-	if !ok {
-		acct.Holdings[ticker] = Holding{price, shares}
-	} else {
-		newShares := h.Shares + shares
-		acct.Holdings[ticker] = Holding{price, newShares}
+	h := acct.Holdings[ticker]
+	acct.Holdings[ticker] = Holding{
+		Strike: price,
+		Shares: h.Shares + shares,
 	}
 
 	if err := s.saveAccount(ctx, key, acct); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return acct, nil
 }
 
 // Sell shares for play money portfolio
-func (s *Stocktopus) Sell(ctx context.Context, ticker string, shares uint64, key string) error {
+func (s *Stocktopus) Sell(ctx context.Context, ticker string, shares uint64, key string) (*Account, error) {
 
 	price, err := s.stockInterface.Price(ticker)
 	if err != nil {
-		return fmt.Errorf("quote failed: %w", err)
+		return nil, fmt.Errorf("quote failed: %w", err)
 	}
 
 	acct, err := s.account(ctx, key)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	h, ok := acct.Holdings[ticker]
 	if !ok || h.Shares < shares {
-		return errors.New("Not enough shares")
+		return nil, errors.New("Not enough shares")
 	}
 
 	newShares := h.Shares - shares
 	if newShares == 0 {
 		delete(acct.Holdings, ticker)
 	} else {
-		acct.Holdings[ticker] = Holding{h.Strike, newShares}
+		acct.Holdings[ticker] = Holding{
+			Strike: h.Strike,
+			Shares: newShares,
+		}
 	}
 
 	acct.Balance += float64(shares) * price
 
 	if err := s.saveAccount(ctx, key, acct); err != nil {
-		return fmt.Errorf("Unable to save account: %w", err)
+		return nil, fmt.Errorf("Unable to save account: %w", err)
 	}
 
-	return nil
+	return acct, nil
 }
 
 // Portfolio returns the account for a given key
 func (s *Stocktopus) Portfolio(ctx context.Context, key string) (*Account, error) {
 	return s.account(ctx, key)
+}
+
+// Latest populates the Latest map in the account (it is not saved)
+func (s *Stocktopus) Latest(ctx context.Context, acct *Account) (*Account, error) {
+	tickers := make([]string, 0, len(acct.Holdings))
+	for ticker := range acct.Holdings {
+		tickers = append(tickers, ticker)
+	}
+	quotes, err := s.getQuotes(tickers)
+	if err != nil {
+		return nil, err
+	}
+
+	// Populate latest prices
+	for _, q := range quotes {
+		acct.Latest[q.Ticker] = q.LatestPrice
+	}
+
+	return acct, nil
 }
 
 //-------------------------------------

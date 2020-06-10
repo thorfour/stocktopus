@@ -62,6 +62,7 @@ func (w WatchList) String() string {
 type Account struct {
 	Balance  float64
 	Holdings map[string]Holding
+	Latest   map[string]float64
 }
 
 // Holding is a specific stock holding
@@ -70,7 +71,7 @@ type Holding struct {
 	Shares uint64
 }
 
-func (a *Account) String(wl WatchList) string {
+func (a *Account) String() string {
 	if len(a.Holdings) <= 0 {
 		return fmt.Sprintf("Balance: $%0.2f", a.Balance)
 	}
@@ -78,18 +79,21 @@ func (a *Account) String(wl WatchList) string {
 	total := float64(0)
 	totalChange := float64(0)
 	rows := make([][]interface{}, 0, len(a.Holdings))
-	for _, quote := range wl {
-		h := a.Holdings[quote.Ticker]
-		total += float64(h.Shares) * quote.LatestPrice
-		delta := float64(h.Shares) * (quote.LatestPrice - h.Strike)
+	for ticker, h := range a.Holdings {
+		latest, ok := a.Latest[ticker]
+		if !ok {
+			continue
+		}
+		total += float64(h.Shares) * latest
+		delta := float64(h.Shares) * (latest - h.Strike)
 		totalChange += delta
 		deltaStr := fmt.Sprintf("%0.2f", delta)
 		rows = append(rows,
 			[]interface{}{
-				quote.Ticker,
+				ticker,
 				h.Shares,
 				h.Strike,
-				quote.LatestPrice,
+				latest,
 				deltaStr,
 			},
 		)
