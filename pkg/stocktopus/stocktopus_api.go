@@ -157,7 +157,7 @@ func (s *Stocktopus) Sell(ticker string, shares uint64, key string) error {
 	if newShares == 0 {
 		delete(acct.Holdings, ticker)
 	} else {
-		acct.Holdings[ticker] = holding{h.Strike, newShares}
+		acct.Holdings[ticker] = Holding{h.Strike, newShares}
 	}
 
 	acct.Balance += float64(shares) * price
@@ -170,7 +170,7 @@ func (s *Stocktopus) Sell(ticker string, shares uint64, key string) error {
 }
 
 // Portfolio returns the account for a given key
-func (s *Stocktopus) Portfolio(key string) (*account, error) {
+func (s *Stocktopus) Portfolio(key string) (*Account, error) {
 	return s.account(key)
 }
 

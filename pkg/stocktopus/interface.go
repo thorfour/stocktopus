@@ -69,3 +69,47 @@ type Holding struct {
 	Strike float64
 	Shares uint64
 }
+
+func (a *Account) String(wl WatchList) string {
+	if len(a.Holdings) <= 0 {
+		return fmt.Sprintf("Balance: $%0.2f", a.Balance)
+	}
+
+	total := float64(0)
+	totalChange := float64(0)
+	rows := make([][]interface{}, 0, len(a.Holdings))
+	for _, quote := range wl {
+		h := a.Holdings[quote.Ticker]
+		total += float64(h.Shares) * quote.LatestPrice
+		delta := float64(h.Shares) * (quote.LatestPrice - h.Strike)
+		totalChange += delta
+		deltaStr := fmt.Sprintf("%0.2f", delta)
+		rows = append(rows,
+			[]interface{}{
+				quote.Ticker,
+				h.Shares,
+				h.Strike,
+				quote.LatestPrice,
+				deltaStr,
+			},
+		)
+	}
+
+	rows = append(rows,
+		[]interface{}{
+			"Total",
+			"---",
+			"---",
+			"---",
+			fmt.Sprintf("%0.2f", totalChange),
+		},
+	)
+
+	t := gotabulate.Create(rows)
+	t.SetHeaders([]string{"Ticker", "Shares", "Strike", "Current", "Gain/Loss $"})
+	t.SetAlign("left")
+	t.SetHideLines([]string{"bottomLine", "betweenLine", "top"})
+	table := t.Render("simple")
+	summary := fmt.Sprintf("Portfolio Value: $%0.2f\nBalance: $%0.2f\nTotal: $%0.2f", total, a.Balance, total+a.Balance)
+	return fmt.Sprintf("%v\n%v", table, summary)
+}

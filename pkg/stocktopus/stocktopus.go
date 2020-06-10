@@ -21,13 +21,6 @@ import (
 	"github.com/thorfour/stocktopus/pkg/stock"
 )
 
-type cmdFunc func([]string, url.Values) (string, error)
-
-type cmdInfo struct {
-	funcPtr cmdFunc // Function pointer to the function to execute
-	helpStr string  // help string
-}
-
 // Supported commands
 const (
 	addToList      = "WATCH"
@@ -49,40 +42,11 @@ const (
 )
 
 var (
-	cmds    map[string]cmdInfo
 	cmdHist = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "command_timings",
 		Help: "A histogram of cmd request execution times",
 	}, []string{"command"})
 )
-
-// Mapping of command string to function
-/*
-func init() {
-	cmds = map[string]cmdInfo{
-		// List actions
-		addToList:      {add, "*watch (#list) [tickers...]* add tickers to personal watch list"},
-		printList:      {print, "*list (#list)*               print out personal watch list"},
-		removeFromList: {remove, "*unwatch (#list) [ticker]*   remove single ticker from watch list"},
-		clear:          {clearList, "*clear (#list)*              remove entire watch list"},
-
-		// Info actions
-		info:  {getInfo, "*info [ticker]* print a company profile"},
-		news:  {getNews, "*news ticker* Displays the latest news for a company"},
-		stats: {getStats, "*stats [ticker] (field options...)* print out statistics for a company"},
-		help:  {printHelp, "*[tickers...]*       pull stock quotes for list of tickers"},
-
-		// Play money actions
-		deposit:   {depositPlay, "*deposit [amount]* deposit amount of play money into account"},
-		reset:     {resetPlay, "*reset* resets account"},
-		portfolio: {portfolioPlay, "*portfolio* Prints current portfolio of play money"},
-		buy:       {buyPlay, "*buy [ticker] [shares]* Purchases number of shares in a security with play money"},
-		sell:      {sellPlay, "*sell [ticker] [shares]* Sells number of shares of specified security"},
-	}
-}
-*/
-
-type stockFunc func(string) (string, error)
 
 // measureTime is a helper function to measure the execution time of a function
 func measureTime(start time.Time, label string) {
@@ -91,7 +55,7 @@ func measureTime(start time.Time, label string) {
 
 // Process url string to provide stocktpus functionality
 func Process(args url.Values) (string, error) {
-	s := &Stocktopus{
+	s := &Stocktopus{ // TODO lift this out
 		kvstore:        connectRedis(), // TODO use passed in configs instead
 		stockInterface: &stock.IexWrapper{},
 	}
@@ -103,18 +67,42 @@ func Process(args url.Values) (string, error) {
 	text = strings.Split(strings.ToUpper(text[0]), " ")
 	switch text[0] {
 	case buy:
-		s.Buy("", 0, "")
+		shares, err := strconv.Atoi(text[2])
+		if err != nil {
+			return "", err
+		}
+		s.Buy(text[1], uint64(shares), acctKey(args))
 	case sell:
+		shares, err := strconv.Atoi(text[2])
+		if err != nil {
+			return "", err
+		}
+		s.Sell(text[1], uint64(shares), acctKey(args))
 	case deposit:
+		amount, err := strconv.Atoi(text[0])
+		if err != nil {
+			return "", err
+		}
+		s.Deposit(float64(amount), acctKey(args))
 	case portfolio:
+		acct, err := s.Portfolio(acctKey(args))
+		if err != nil {
+			return "", err
+		}
+
+		return acct.String(), err
 	case reset:
+		return "", s.Clear(acctKey(args))
+	default:
+		wl, err := s.getQuotes(text)
+		if err != nil {
+			return "", err
+		}
+
+		return wl.String(), nil
 	}
 
-	cmd, ok := cmds[text[0]]
-	if !ok {
-		return getQuotes(args["text"][0], args)
-	}
-	return cmd.funcPtr(text, args)
+	return "", fmt.Errorf("bad request")
 }
 
 func listkey(text []string, decodedMap url.Values) string {
