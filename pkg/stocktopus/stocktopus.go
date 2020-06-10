@@ -47,6 +47,9 @@ func (s *Stocktopus) Add(ctx context.Context, tickers []string, key string) erro
 func (s *Stocktopus) Print(ctx context.Context, key string) (WatchList, error) {
 	list, err := s.KVStore.SMembers(ctx, key).Result()
 	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return nil, nil
+		}
 		return nil, fmt.Errorf("SMembers failed: %w", err)
 	}
 

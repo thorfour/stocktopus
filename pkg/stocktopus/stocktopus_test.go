@@ -110,3 +110,91 @@ Total: $1000.00`
 	}, a)
 	require.Equal(t, "Balance: $1000.00", a.String())
 }
+
+func TestWatchList(t *testing.T) {
+
+	// Start mini redis instance to connect to
+	mr, err := miniredis.Run()
+	require.NoError(t, err)
+	defer mr.Close()
+	cfg.RedisAddr = mr.Addr()
+
+	s := &Stocktopus{
+		KVStore: redis.NewClient(&redis.Options{
+			Addr: mr.Addr(),
+		}),
+		StockInterface: &fakeLookup{
+			fakeQuotes: []*stock.Quote{
+				{
+					Ticker:        "AMD",
+					LatestPrice:   1.00,
+					Change:        0,
+					ChangePercent: 0,
+				},
+				{
+					Ticker:        "TSLA",
+					LatestPrice:   8.00,
+					Change:        0,
+					ChangePercent: 0,
+				},
+			},
+			fakeCompany: &types.Company{},
+			fakeStats:   &types.Stats{},
+			fakeNews:    []string{},
+		},
+	}
+
+	ctx := context.Background()
+	wl, err := s.Print(ctx, "mykey")
+	require.Error(t, err)
+	require.Nil(t, wl)
+
+	require.NoError(t, s.Add(ctx, []string{"AMD", "TLSA"}, "mykey"))
+	wl, err = s.Print(ctx, "mykey")
+	require.NoError(t, err)
+	require.Equal(t, WatchList{
+		{
+			Ticker:        "AMD",
+			LatestPrice:   1.00,
+			Change:        0,
+			ChangePercent: 0,
+		},
+		{
+			Ticker:        "TSLA",
+			LatestPrice:   8.00,
+			Change:        0,
+			ChangePercent: 0,
+		},
+	}, wl)
+
+	exp :=
+		`    Company       Current Price       Todays Change       Percent Change 
+------------  ------------------  ------------------  -------------------
+        AMD                   1                0.00                0.000 
+       TSLA                   8                0.00                0.000 
+       Avg.                 ---                 ---               0.000% 
+`
+
+	require.Equal(t, exp, wl.String())
+
+	require.NoError(t, s.Remove(ctx, []string{"AMD"}, "mykey"))
+	wl, err = s.Print(ctx, "mykey")
+	require.NoError(t, err)
+	require.Equal(t, WatchList{
+		{
+			Ticker:        "TSLA",
+			LatestPrice:   8.00,
+			Change:        0,
+			ChangePercent: 0,
+		},
+	}, wl)
+
+	exp =
+		`    Company       Current Price       Todays Change       Percent Change 
+------------  ------------------  ------------------  -------------------
+       TSLA                   8                0.00                0.000 
+       Avg.                 ---                 ---               0.000% 
+`
+
+	require.Equal(t, exp, wl.String())
+}
