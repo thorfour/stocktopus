@@ -691,13 +691,3 @@ func getStats(text []string, _ url.Values) (string, error) {
 
 	return retStr, nil
 }
-
-// sortableList is a sort wrapper around a slice of stock quotes
-// they are sorted by percent change
-type sortableList []*stock.Quote
-
-func (s sortableList) Len() int { return len(s) }
-
-func (s sortableList) Less(i, j int) bool { return s[i].ChangePercent > s[j].ChangePercent }
-
-func (s sortableList) Swap(i, j int) { s[i], s[j] = s[j], s[i] }

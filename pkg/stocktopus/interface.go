@@ -57,3 +57,15 @@ func (w WatchList) String() string {
 
 	return t.Render("simple")
 }
+
+// Account is a users play money account
+type Account struct {
+	Balance  float64
+	Holdings map[string]Holding
+}
+
+// Holding is a specific stock holding
+type Holding struct {
+	Strike float64
+	Shares uint64
+}

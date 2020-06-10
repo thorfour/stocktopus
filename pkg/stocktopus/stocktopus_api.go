@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/thorfour/iex/pkg/types"
 	"github.com/thorfour/stocktopus/pkg/stock"
 	redis "gopkg.in/redis.v5"
 )
@@ -84,7 +85,7 @@ func (s *Stocktopus) Clear(key string) error {
 
 // Deposit play money in account
 // NOTE: amount is a float because of legacy mistakes
-func (s *Stocktopus) Deposit(amount float64, key string) (*account, error) {
+func (s *Stocktopus) Deposit(amount float64, key string) (*Account, error) {
 	acct, err := s.account(key)
 	if err != nil {
 		// TODO check for no key, because we want to open an account if there isn't one
@@ -121,10 +122,10 @@ func (s *Stocktopus) Buy(ticker string, shares uint64, key string) error {
 	acct.Balance -= (price * float64(shares))
 	h, ok := acct.Holdings[ticker]
 	if !ok {
-		acct.Holdings[ticker] = holding{price, shares}
+		acct.Holdings[ticker] = Holding{price, shares}
 	} else {
 		newShares := h.Shares + shares
-		acct.Holdings[ticker] = holding{price, newShares}
+		acct.Holdings[ticker] = Holding{price, newShares}
 	}
 
 	if err := s.saveAccount(key, acct); err != nil {
@@ -173,14 +174,56 @@ func (s *Stocktopus) Portfolio(key string) (*account, error) {
 	return s.account(key)
 }
 
-func (s *Stocktopus) account(key string) (*account, error) {
+//-------------------------------------
+//
+// Info API
+//
+//-------------------------------------
+
+// Info returns info about a given company
+func (s *Stocktopus) Info(ticker string) (*types.Company, error) {
+	info, err := s.stockInterface.Company(ticker)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get company info: %w", err)
+	}
+
+	return info, nil
+}
+
+// News returns the headlines for a given company
+func (s *Stocktopus) News(ticker string) ([]string, error) {
+	news, err := s.stockInterface.News(ticker)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get news: %w", err)
+	}
+
+	return news, nil
+}
+
+// Stats returns company statistics
+func (s *Stocktopus) Stats(ticker string, filters ...func(string) bool) (*types.Stats, error) {
+	stats, err := s.stockInterface.Stats(ticker)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get stats: %w", err)
+	}
+
+	return stats, nil
+}
+
+//-------------------------------------
+//
+// Helper funtions
+//
+//-------------------------------------
+
+func (s *Stocktopus) account(key string) (*Account, error) {
 	serialized, err := s.kvstore.Get(key).Result()
 	if err != nil {
 		return nil, fmt.Errorf("Unable to load account: %w", err)
 	}
 
 	// Deserialize into struct
-	acct := &account{}
+	acct := &Account{}
 	if err := json.Unmarshal([]byte(serialized), acct); err != nil {
 		return nil, fmt.Errorf("Unable to parse account: %w", err)
 	}
@@ -188,7 +231,7 @@ func (s *Stocktopus) account(key string) (*account, error) {
 	return acct, nil
 }
 
-func (s *Stocktopus) saveAccount(key string, acct *account) error {
+func (s *Stocktopus) saveAccount(key string, acct *Account) error {
 	b, err := json.Marshal(acct)
 	if err != nil {
 		return fmt.Errorf("Failed to serialize account: %w", err)
