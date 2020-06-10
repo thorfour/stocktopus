@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -9,16 +8,13 @@ import (
 
 	"golang.org/x/crypto/acme/autocert"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/thorfour/stocktopus/pkg/auth"
 	"github.com/thorfour/stocktopus/pkg/cfg"
-	"github.com/thorfour/stocktopus/pkg/stocktopus"
-)
-
-const (
-	ephemeral = "ephemeral"
-	inchannel = "in_channel"
+	"github.com/thorfour/stocktopus/pkg/slack"
+	"github.com/thorfour/stocktopus/pkg/stock"
 )
 
 var (
@@ -27,12 +23,6 @@ var (
 	debug     = flag.Bool("d", false, "turn on debugging. Disable TLS")
 	certCache = flag.String("c", "/cert", "location to store certs")
 )
-
-// response is the json struct for a slack response
-type response struct {
-	ResponseType string `json:"response_type"`
-	Text         string `json:"text"`
-}
 
 func init() {
 	flag.Parse()
@@ -55,7 +45,14 @@ func main() {
 
 func run(p int, tlsOff bool, certDir string, router *mux.Router) {
 
-	router.HandleFunc("/v1", handler)
+	s := slack.New(redis.NewClient(&redis.Options{
+		Addr:     "",
+		Password: "",
+	}),
+		&stock.IexWrapper{},
+	)
+
+	router.HandleFunc("/v1", s.Handler)
 	router.HandleFunc("/auth", auth.Dummy())
 
 	if tlsOff { // no TLS
@@ -79,38 +76,4 @@ func run(p int, tlsOff bool, certDir string, router *mux.Router) {
 		go http.ListenAndServe(":80", m.HTTPHandler(nil))
 		log.Fatal(srv.ListenAndServeTLS("", ""))
 	}
-}
-
-func handler(resp http.ResponseWriter, req *http.Request) {
-	if err := req.ParseForm(); err != nil {
-		http.Error(resp, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Errors are to be send to the user as an ephemeral message
-	msg, err := stocktopus.Process(req.Form)
-	newReponse(resp, msg, err)
-}
-
-func newReponse(resp http.ResponseWriter, message string, err error) {
-	r := &response{
-		ResponseType: inchannel,
-		Text:         message,
-	}
-
-	// Switch to an ephemeral message
-	if err != nil {
-		r.ResponseType = ephemeral
-		r.Text = err.Error()
-	}
-
-	b, err := json.Marshal(r)
-	if err != nil {
-		http.Error(resp, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	resp.Header().Set("Content-Type", "application/json")
-	resp.Write(b)
-	return
 }

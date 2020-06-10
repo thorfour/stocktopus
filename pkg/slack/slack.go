@@ -1,135 +1,93 @@
 package slack
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
-	"io/ioutil"
+	"errors"
 	"net/http"
+	"net/url"
 	"strings"
 
-	"golang.org/x/net/websocket"
+	"github.com/go-redis/redis/v8"
+	"github.com/thorfour/stocktopus/pkg/stock"
+	"github.com/thorfour/stocktopus/pkg/stocktopus"
 )
 
 const (
-	slackAPIURL = string("https://api.slack.com/")
-	rtmstart    = string("https://slack.com/api/rtm.start")
-	messageType = string("message")
+	ephemeral = "ephemeral"
+	inchannel = "in_channel"
 )
 
-// Standard slack message format
-type messageRx struct {
-	Type    string `json:"type"`
-	Channel string `json:"channel"`
-	User    string `json:"user"`
-	Text    string `json:"text"`
-	TS      string `json:"ts"`
-	// TODO does not include edits or subtypes
+// response is the json struct for a slack response
+type response struct {
+	ResponseType string `json:"response_type"`
+	Text         string `json:"text"`
 }
 
-// Standard slack message format
-type messageTx struct {
-	ID      uint64 `json:"id"`
-	Type    string `json:"type"`
-	Channel string `json:"channel"`
-	Text    string `json:"text"`
+// SlashServer is a slack server that handles slash commands
+type SlashServer struct {
+	s *stocktopus.Stocktopus
 }
 
-// RTMClient is a real time messaging client for slack
-type RTMClient struct {
-	ws           *websocket.Conn
-	id           string
-	msg          messageRx
-	send         messageTx
-	sendSequence uint64
+// New returns a new slash server
+func New(kvstore *redis.Client, stocks stock.Lookup) *SlashServer {
+	return &SlashServer{
+		s: &stocktopus.Stocktopus{
+			KVStore:        kvstore,
+			StockInterface: stocks,
+		},
+	}
 }
 
-// NewRTMClient returns a new real time messaging client for a given token
-func NewRTMClient(token string) (*RTMClient, error) {
+// Handler is a http handler func for processing slack slash requests for stocktopus
+func (s *SlashServer) Handler(resp http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
 
-	// Request an rtm session
-	socketURL, id, err := rtmStart(token)
+	if err := req.ParseForm(); err != nil {
+		http.Error(resp, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	msg, err := s.Process(ctx, req.Form)
 	if err != nil {
-		return nil, err
+		http.Error(resp, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	// Connect to the rtm socket
-	ws, err := websocket.Dial(socketURL, "", slackAPIURL)
-	if err != nil {
-		return nil, err
-	}
-
-	return &RTMClient{ws, id, messageRx{}, messageTx{}, 0}, nil
+	s.newResponse(resp, msg, nil)
 }
 
-func rtmStart(tok string) (socket string, id string, err error) {
-
-	url := fmt.Sprintf("%v?token=%v&no_unreads=true", rtmstart, tok)
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", "", err
+// Process a slack request
+func (s *SlashServer) Process(ctx context.Context, args url.Values) (string, error) {
+	text, ok := args["text"]
+	if !ok {
+		return "", errors.New("Bad request")
 	}
 
-	if resp.StatusCode != 200 {
-		return "", "", fmt.Errorf("Request Failed: %v", resp.StatusCode)
-	}
-
-	defer resp.Body.Close()
-	jsonData, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", "", err
-	}
-
-	// Json format
-	type self struct {
-		ID string `json:"id"`
-	}
-	type rtmStartResp struct {
-		Ok    bool   `json:"ok"`
-		Error string `json:"error"`
-		URL   string `json:"url"`
-		Self  self   `json:"self"`
-	}
-
-	// Parse the response
-	var data rtmStartResp
-	err = json.Unmarshal(jsonData, &data)
-	if err != nil {
-		return "", "", err
-	}
-
-	if !data.Ok {
-		return "", "", fmt.Errorf(data.Error)
-	}
-
-	return data.URL, data.Self.ID, nil
+	text = strings.Split(strings.ToUpper(text[0]), " ")
+	return s.s.Command(ctx, text[0], text[1:], args)
 }
 
-// Receive receives data until a message for the requested id is obtained
-func (s *RTMClient) Receive() (string, error) {
-
-	checkMsg := func() error {
-		return websocket.JSON.Receive(s.ws, &s.msg)
+// TODO determine ephermeralness of response
+func (s *SlashServer) newResponse(resp http.ResponseWriter, message string, err error) {
+	r := &response{
+		ResponseType: inchannel,
+		Text:         message,
 	}
 
-	var err error
-	directMsg := fmt.Sprintf("<@%v>: ", s.id)
-	for err = checkMsg(); err != nil || !strings.HasPrefix(s.msg.Text, directMsg) || s.msg.Type != messageType; {
-		err = checkMsg()
+	// Switch to an ephemeral message
+	if err != nil {
+		r.ResponseType = ephemeral
+		r.Text = err.Error()
 	}
 
-	text := s.msg.Text[len(s.id)+5:]
-	return text, nil
-}
+	b, err := json.Marshal(r)
+	if err != nil {
+		http.Error(resp, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
-// Send a response to the same channel as previous received message
-func (s *RTMClient) Send(m string) error {
-
-	// Setup the send message
-	s.send.Channel = s.msg.Channel
-	s.sendSequence++
-	s.send.ID = s.sendSequence
-	s.send.Text = m
-	s.send.Type = messageType
-
-	return websocket.JSON.Send(s.ws, &s.send)
+	resp.Header().Set("Content-Type", "application/json")
+	resp.Write(b)
+	return
 }

@@ -20,8 +20,8 @@ var (
 
 // Stocktopus facilitates the retrieval and storage of stock information
 type Stocktopus struct {
-	kvstore        *redis.Client
-	stockInterface stock.Lookup
+	KVStore        *redis.Client
+	StockInterface stock.Lookup
 }
 
 //-------------------------------------
@@ -36,7 +36,7 @@ func (s *Stocktopus) Add(ctx context.Context, tickers []string, key string) erro
 		return ErrInvalidArguments
 	}
 
-	if _, err := s.kvstore.SAdd(ctx, key, tickers).Result(); err != nil {
+	if _, err := s.KVStore.SAdd(ctx, key, tickers).Result(); err != nil {
 		return fmt.Errorf("SAdd failed: %w", err)
 	}
 
@@ -45,7 +45,7 @@ func (s *Stocktopus) Add(ctx context.Context, tickers []string, key string) erro
 
 // Print returns a watchlist
 func (s *Stocktopus) Print(ctx context.Context, key string) (WatchList, error) {
-	list, err := s.kvstore.SMembers(ctx, key).Result()
+	list, err := s.KVStore.SMembers(ctx, key).Result()
 	if err != nil {
 		return nil, fmt.Errorf("SMembers failed: %w", err)
 	}
@@ -63,16 +63,16 @@ func (s *Stocktopus) Remove(ctx context.Context, tickers []string, key string) e
 		return ErrInvalidArguments
 	}
 
-	if _, err := s.kvstore.SRem(ctx, key, tickers).Result(); err != nil {
+	if _, err := s.KVStore.SRem(ctx, key, tickers).Result(); err != nil {
 		return fmt.Errorf("SRem failed: %w", err)
 	}
 
 	return nil
 }
 
-// Clear a watchlist or account by deleting the key from the kvstore
+// Clear a watchlist or account by deleting the key from the KVStore
 func (s *Stocktopus) Clear(ctx context.Context, key string) error {
-	if _, err := s.kvstore.Del(ctx, key).Result(); err != nil {
+	if _, err := s.KVStore.Del(ctx, key).Result(); err != nil {
 		return fmt.Errorf("Del failed: %w", err)
 	}
 
@@ -106,7 +106,7 @@ func (s *Stocktopus) Deposit(ctx context.Context, amount float64, key string) (*
 // Buy shares for play money portfolio
 func (s *Stocktopus) Buy(ctx context.Context, ticker string, shares uint64, key string) (*Account, error) {
 
-	price, err := s.stockInterface.Price(ticker)
+	price, err := s.StockInterface.Price(ticker)
 	if err != nil {
 		return nil, fmt.Errorf("quote failed: %w", err)
 	}
@@ -138,7 +138,7 @@ func (s *Stocktopus) Buy(ctx context.Context, ticker string, shares uint64, key 
 // Sell shares for play money portfolio
 func (s *Stocktopus) Sell(ctx context.Context, ticker string, shares uint64, key string) (*Account, error) {
 
-	price, err := s.stockInterface.Price(ticker)
+	price, err := s.StockInterface.Price(ticker)
 	if err != nil {
 		return nil, fmt.Errorf("quote failed: %w", err)
 	}
@@ -205,7 +205,7 @@ func (s *Stocktopus) Latest(ctx context.Context, acct *Account) (*Account, error
 
 // Info returns info about a given company
 func (s *Stocktopus) Info(ticker string) (*types.Company, error) {
-	info, err := s.stockInterface.Company(ticker)
+	info, err := s.StockInterface.Company(ticker)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get company info: %w", err)
 	}
@@ -215,7 +215,7 @@ func (s *Stocktopus) Info(ticker string) (*types.Company, error) {
 
 // News returns the headlines for a given company
 func (s *Stocktopus) News(ticker string) ([]string, error) {
-	news, err := s.stockInterface.News(ticker)
+	news, err := s.StockInterface.News(ticker)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get news: %w", err)
 	}
@@ -225,7 +225,7 @@ func (s *Stocktopus) News(ticker string) ([]string, error) {
 
 // Stats returns company statistics
 func (s *Stocktopus) Stats(ticker string) (*types.Stats, error) {
-	stats, err := s.stockInterface.Stats(ticker)
+	stats, err := s.StockInterface.Stats(ticker)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get stats: %w", err)
 	}
@@ -240,7 +240,7 @@ func (s *Stocktopus) Stats(ticker string) (*types.Stats, error) {
 //-------------------------------------
 
 func (s *Stocktopus) account(ctx context.Context, key string) (*Account, error) {
-	serialized, err := s.kvstore.Get(ctx, key).Result()
+	serialized, err := s.KVStore.Get(ctx, key).Result()
 	if err != nil {
 		if errors.Is(err, redis.Nil) { // If no key found return fresh account
 			return &Account{
@@ -265,7 +265,7 @@ func (s *Stocktopus) saveAccount(ctx context.Context, key string, acct *Account)
 		return fmt.Errorf("Failed to serialize account: %w", err)
 	}
 
-	if _, err := s.kvstore.Set(ctx, key, b, 0).Result(); err != nil {
+	if _, err := s.KVStore.Set(ctx, key, b, 0).Result(); err != nil {
 		return fmt.Errorf("Failed to save account: %w", err)
 	}
 
@@ -273,7 +273,7 @@ func (s *Stocktopus) saveAccount(ctx context.Context, key string, acct *Account)
 }
 
 func (s *Stocktopus) getQuotes(tickers []string) (WatchList, error) {
-	quotes, err := s.stockInterface.BatchQuotes(tickers)
+	quotes, err := s.StockInterface.BatchQuotes(tickers)
 	if err != nil {
 		return nil, err
 	}

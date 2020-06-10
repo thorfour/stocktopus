@@ -2,7 +2,6 @@ package stocktopus
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -42,19 +41,6 @@ var (
 // measureTime is a helper function to measure the execution time of a function
 func measureTime(start time.Time, label string) {
 	cmdHist.WithLabelValues(label).Observe(time.Since(start).Seconds())
-}
-
-// Process url string to provide stocktpus functionality
-// TODO this should get lifted out
-func (s *Stocktopus) Process(args url.Values) (string, error) {
-	ctx := context.Background() // TODO
-	text, ok := args["text"]
-	if !ok {
-		return "", errors.New("Bad request")
-	}
-
-	text = strings.Split(strings.ToUpper(text[0]), " ")
-	return s.Command(ctx, text[0], text[1:], args)
 }
 
 // Command processes a stocktopus command
