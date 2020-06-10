@@ -25,5 +25,4 @@ require (
 	github.com/yuin/gopher-lua v0.0.0-20200603152657-dc2b0ca8b37e // indirect
 	golang.org/x/crypto v0.0.0-20190422183909-d864b10871cd
 	golang.org/x/net v0.0.0-20200520004742-59133d7f0dd7
-	gopkg.in/redis.v5 v5.2.9
 )
