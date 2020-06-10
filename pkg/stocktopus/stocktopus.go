@@ -57,6 +57,7 @@ var (
 )
 
 // Mapping of command string to function
+/*
 func init() {
 	cmds = map[string]cmdInfo{
 		// List actions
@@ -79,6 +80,7 @@ func init() {
 		sell:      {sellPlay, "*sell [ticker] [shares]* Sells number of shares of specified security"},
 	}
 }
+*/
 
 type stockFunc func(string) (string, error)
 
@@ -89,7 +91,9 @@ func measureTime(start time.Time, label string) {
 
 // Process url string to provide stocktpus functionality
 func Process(args url.Values) (string, error) {
-	s := &Stocktopus{}
+	s := &Stocktopus{
+		kvstore: connectRedis(), // TODO use passed in configs instead
+	}
 	text, ok := args["text"]
 	if !ok {
 		return "", errors.New("Bad request")
@@ -112,62 +116,21 @@ func Process(args url.Values) (string, error) {
 	return cmd.funcPtr(text, args)
 }
 
-// Add ticker(s) to a watch list
-func add(text []string, decodedMap url.Values) (string, error) {
-	defer measureTime(time.Now(), "add")
-
-	if len(text) < 2 { // Must be something to add to watch list
-		return "", errors.New("Error: Invalid number of arguments")
-	}
-
-	// Chop off addToList arg
-	text = text[1:]
+func listkey(text []string, decodedMap url.Values) string {
 
 	// User and token to be used as watch list lookup
 	user := decodedMap["user_id"]
 	token := decodedMap["token"]
 
 	// If the first arg starts with '#' then it's the name of the list
-	if text[0][0] == '#' {
+	if strings.HasPrefix(text[0], "#") {
 		user = []string{strings.ToLower(text[0][1:]), decodedMap["team_id"][0]}
-		text = text[1:] // Remove list name
 	}
 
-	key := fmt.Sprintf("%v%v", token, user)
-
-	return Add(text, key)
+	return fmt.Sprintf("%v%v", token, user)
 }
 
-// Print out a watchlist
-func print(text []string, decodedMap url.Values) (string, error) {
-	defer measureTime(time.Now(), "print")
-
-	// User and token to be used as watch list lookup
-	user := decodedMap["user_id"]
-	token := decodedMap["token"]
-
-	// Chop off printList arg
-	text = text[1:]
-
-	// If the first arg starts with '#' then it's the name of the list
-	if len(text) == 1 && text[0][0] == '#' {
-		user = []string{strings.ToLower(text[0][1:]), decodedMap["team_id"][0]}
-		text = text[1:] // Remove list name
-	} else if len(text) >= 1 {
-		return "", errors.New("Error: Invalid number arguments")
-	}
-
-	key := fmt.Sprintf("%v%v", token, user)
-
-	rClient := connectRedis()
-
-	// Get and print watch list
-	list, err := rClient.SMembers(key).Result()
-	if err != nil || len(list) == 0 {
-		return "", errors.New("Error: No List")
-	}
-
-	return getQuotes(strings.Join(list, " "), decodedMap)
+func key() {
 }
 
 // Remove a single ticker from a watch list
