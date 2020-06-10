@@ -251,4 +251,12 @@ Balance: $999.00
 Total: $1000.00`
 
 	require.Equal(t, exp, a.String())
+
+	a, err = s.Sell(ctx, "AMD", 1, "mykey")
+	require.NoError(t, err)
+	require.Equal(t, &Account{
+		Balance:  1000,
+		Holdings: map[string]Holding{},
+	}, a)
+	require.Equal(t, "Balance: $1000.00", a.String())
 }
