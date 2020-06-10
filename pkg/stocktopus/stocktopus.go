@@ -92,7 +92,8 @@ func measureTime(start time.Time, label string) {
 // Process url string to provide stocktpus functionality
 func Process(args url.Values) (string, error) {
 	s := &Stocktopus{
-		kvstore: connectRedis(), // TODO use passed in configs instead
+		kvstore:        connectRedis(), // TODO use passed in configs instead
+		stockInterface: &stock.IexWrapper{},
 	}
 	text, ok := args["text"]
 	if !ok {
@@ -130,7 +131,11 @@ func listkey(text []string, decodedMap url.Values) string {
 	return fmt.Sprintf("%v%v", token, user)
 }
 
-func key() {
+func acctKey(decodedMap url.Values) string {
+	// User and token to be used as lookup
+	user := decodedMap["user_id"]
+	token := decodedMap["token"]
+	return fmt.Sprintf("%v%v%v", "ACCT", token, user)
 }
 
 // Remove a single ticker from a watch list
