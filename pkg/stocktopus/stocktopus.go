@@ -59,19 +59,24 @@ func (s *Stocktopus) Process(args url.Values) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		s.Buy(ctx, text[1], uint64(shares), acctKey(args))
+		return "", s.Buy(ctx, text[1], uint64(shares), acctKey(args))
 	case sell:
 		shares, err := strconv.Atoi(text[2])
 		if err != nil {
 			return "", err
 		}
-		s.Sell(ctx, text[1], uint64(shares), acctKey(args))
+		return "", s.Sell(ctx, text[1], uint64(shares), acctKey(args))
 	case deposit:
 		amount, err := strconv.Atoi(text[1])
 		if err != nil {
 			return "", err
 		}
-		s.Deposit(ctx, float64(amount), acctKey(args))
+		_, err = s.Deposit(ctx, float64(amount), acctKey(args))
+		if err != nil {
+			return "", err
+		}
+
+		return "", nil // TODO
 	case portfolio:
 		_, err := s.Portfolio(ctx, acctKey(args))
 		if err != nil {
@@ -124,8 +129,6 @@ func (s *Stocktopus) Process(args url.Values) (string, error) {
 
 		return wl.String(), nil
 	}
-
-	return "", fmt.Errorf("bad request")
 }
 
 func listkey(text []string, decodedMap url.Values) string {

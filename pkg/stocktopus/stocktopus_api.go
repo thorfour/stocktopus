@@ -221,6 +221,11 @@ func (s *Stocktopus) Stats(ticker string) (*types.Stats, error) {
 func (s *Stocktopus) account(ctx context.Context, key string) (*Account, error) {
 	serialized, err := s.kvstore.Get(ctx, key).Result()
 	if err != nil {
+		if errors.Is(err, redis.Nil) { // If no key found return fresh account
+			return &Account{
+				Holdings: map[string]Holding{},
+			}, nil
+		}
 		return nil, fmt.Errorf("Unable to load account: %w", err)
 	}
 
