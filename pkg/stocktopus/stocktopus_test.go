@@ -6,11 +6,11 @@ import (
 	"testing"
 
 	"github.com/alicebob/miniredis"
+	redis "github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/require"
 	"github.com/thorfour/iex/pkg/types"
 	"github.com/thorfour/stocktopus/pkg/cfg"
 	"github.com/thorfour/stocktopus/pkg/stock"
-	"gopkg.in/redis.v5"
 )
 
 // fakeLookup implementes the stock.Lookup interface
@@ -77,12 +77,10 @@ func TestCommands(t *testing.T) {
 		{
 			name: "add to group list",
 			text: "watch #mylist amd",
-			err:  errors.New("Added"),
 		},
 		{
 			name: "add to list",
 			text: "watch amd",
-			err:  errors.New("Added"),
 		},
 		{
 			name: "retrieve group list",
@@ -95,32 +93,26 @@ func TestCommands(t *testing.T) {
 		{
 			name: "unwatch list",
 			text: "unwatch amd",
-			err:  errors.New("Removed"),
 		},
 		{
 			name: "unwatch group list",
 			text: "unwatch #mylist amd",
-			err:  errors.New("Removed"),
 		},
 		{
 			name: "clear list",
 			text: "clear",
-			err:  errors.New("Removed"),
 		},
 		{
 			name: "clear group list",
 			text: "clear #mylist",
-			err:  errors.New("Removed"),
 		},
 		{
 			name: "deposit",
 			text: "deposit 100",
-			err:  errors.New("New Balance: 100"),
 		},
 		{
 			name: "reset",
 			text: "reset",
-			err:  errors.New("New Balance: 0"),
 		},
 		{
 			name: "portfolio",
@@ -134,12 +126,10 @@ func TestCommands(t *testing.T) {
 		{
 			name: "deposit 1k",
 			text: "deposit 1000",
-			err:  errors.New("New Balance: 1000"),
 		},
 		{
 			name: "buy amd",
 			text: "buy amd 1",
-			err:  errors.New("Done"),
 		},
 		{
 			name: "portfolio with holdings",
@@ -153,7 +143,6 @@ func TestCommands(t *testing.T) {
 		{
 			name: "sell amd",
 			text: "sell amd 1",
-			err:  errors.New("Done"),
 		},
 		{
 			name: "info",

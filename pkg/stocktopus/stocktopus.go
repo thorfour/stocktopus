@@ -1,6 +1,7 @@
 package stocktopus
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/url"
@@ -45,6 +46,7 @@ func measureTime(start time.Time, label string) {
 
 // Process url string to provide stocktpus functionality
 func (s *Stocktopus) Process(args url.Values) (string, error) {
+	ctx := context.Background() // TODO
 	text, ok := args["text"]
 	if !ok {
 		return "", errors.New("Bad request")
@@ -57,21 +59,21 @@ func (s *Stocktopus) Process(args url.Values) (string, error) {
 		if err != nil {
 			return "", err
 		}
-		s.Buy(text[1], uint64(shares), acctKey(args))
+		s.Buy(ctx, text[1], uint64(shares), acctKey(args))
 	case sell:
 		shares, err := strconv.Atoi(text[2])
 		if err != nil {
 			return "", err
 		}
-		s.Sell(text[1], uint64(shares), acctKey(args))
+		s.Sell(ctx, text[1], uint64(shares), acctKey(args))
 	case deposit:
 		amount, err := strconv.Atoi(text[1])
 		if err != nil {
 			return "", err
 		}
-		s.Deposit(float64(amount), acctKey(args))
+		s.Deposit(ctx, float64(amount), acctKey(args))
 	case portfolio:
-		_, err := s.Portfolio(acctKey(args))
+		_, err := s.Portfolio(ctx, acctKey(args))
 		if err != nil {
 			return "", err
 		}
@@ -79,20 +81,20 @@ func (s *Stocktopus) Process(args url.Values) (string, error) {
 		return "", err
 		//return acct.String(), err // TODO need to load acct wl
 	case reset:
-		return "", s.Clear(acctKey(args))
+		return "", s.Clear(ctx, acctKey(args))
 	case addToList:
-		return "", s.Add(text[1:], listkey(text[1:], args))
+		return "", s.Add(ctx, text[1:], listkey(text[1:], args))
 	case printList:
-		acct, err := s.Print(listkey(text[1:], args))
+		acct, err := s.Print(ctx, listkey(text[1:], args))
 		if err != nil {
 			return "", err
 		}
 
 		return acct.String(), nil
 	case removeFromList:
-		return "", s.Remove(text[1:], listkey(text[1:], args))
+		return "", s.Remove(ctx, text[1:], listkey(text[1:], args))
 	case clear:
-		return "", s.Clear(listkey(text[1:], args))
+		return "", s.Clear(ctx, listkey(text[1:], args))
 	case info:
 		c, err := s.Info(text[1])
 		if err != nil {
