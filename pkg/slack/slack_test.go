@@ -12,7 +12,6 @@ import (
 	"github.com/thorfour/iex/pkg/types"
 	"github.com/thorfour/stocktopus/pkg/cfg"
 	"github.com/thorfour/stocktopus/pkg/stock"
-	"github.com/thorfour/stocktopus/pkg/stocktopus"
 )
 
 // fakeLookup implementes the stock.Lookup interface
@@ -37,26 +36,24 @@ func TestCommands(t *testing.T) {
 	defer mr.Close()
 	cfg.RedisAddr = mr.Addr()
 
-	s := &SlashServer{
-		s: &stocktopus.Stocktopus{
-			KVStore: redis.NewClient(&redis.Options{
-				Addr: mr.Addr(),
-			}),
-			StockInterface: &fakeLookup{
-				fakeQuotes: []*stock.Quote{
-					{
-						Ticker:        "AMD",
-						LatestPrice:   1.00,
-						Change:        0,
-						ChangePercent: 0,
-					},
+	s := New(
+		redis.NewClient(&redis.Options{
+			Addr: mr.Addr(),
+		}),
+		&fakeLookup{
+			fakeQuotes: []*stock.Quote{
+				{
+					Ticker:        "AMD",
+					LatestPrice:   1.00,
+					Change:        0,
+					ChangePercent: 0,
 				},
-				fakeCompany: &types.Company{},
-				fakeStats:   &types.Stats{},
-				fakeNews:    []string{},
 			},
+			fakeCompany: &types.Company{},
+			fakeStats:   &types.Stats{},
+			fakeNews:    []string{},
 		},
-	}
+	)
 
 	tests := []struct {
 		name string

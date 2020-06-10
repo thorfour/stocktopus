@@ -54,7 +54,7 @@ func (s *Stocktopus) Print(ctx context.Context, key string) (WatchList, error) {
 		return nil, fmt.Errorf("No List")
 	}
 
-	return s.getQuotes(list)
+	return s.GetQuotes(list)
 }
 
 // Remove ticker(s) from a watch list
@@ -183,7 +183,7 @@ func (s *Stocktopus) Latest(ctx context.Context, acct *Account) (*Account, error
 	for ticker := range acct.Holdings {
 		tickers = append(tickers, ticker)
 	}
-	quotes, err := s.getQuotes(tickers)
+	quotes, err := s.GetQuotes(tickers)
 	if err != nil {
 		return nil, err
 	}
@@ -272,7 +272,8 @@ func (s *Stocktopus) saveAccount(ctx context.Context, key string, acct *Account)
 	return nil
 }
 
-func (s *Stocktopus) getQuotes(tickers []string) (WatchList, error) {
+// GetQuotes returns a list of quotes from tickers
+func (s *Stocktopus) GetQuotes(tickers []string) (WatchList, error) {
 	quotes, err := s.StockInterface.BatchQuotes(tickers)
 	if err != nil {
 		return nil, err
