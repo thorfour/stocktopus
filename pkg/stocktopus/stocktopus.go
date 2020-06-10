@@ -133,7 +133,7 @@ func listkey(text []string, decodedMap url.Values) string {
 	token := decodedMap["token"]
 
 	// If the first arg starts with '#' then it's the name of the list
-	if strings.HasPrefix(text[0], "#") {
+	if len(text) > 0 && strings.HasPrefix(text[0], "#") {
 		user = []string{strings.ToLower(text[0][1:]), decodedMap["team_id"][0]}
 	}
 
