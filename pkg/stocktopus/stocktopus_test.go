@@ -21,7 +21,7 @@ type fakeLookup struct {
 	fakeNews    []string
 }
 
-func (f *fakeLookup) Price(string) (float64, error)                { return 0, nil }
+func (f *fakeLookup) Price(string) (float64, error)                { return 1.00, nil }
 func (f *fakeLookup) BatchQuotes([]string) ([]*stock.Quote, error) { return f.fakeQuotes, nil }
 func (f *fakeLookup) News(string) ([]string, error)                { return f.fakeNews, nil }
 func (f *fakeLookup) Stats(string) (*types.Stats, error)           { return f.fakeStats, nil }
