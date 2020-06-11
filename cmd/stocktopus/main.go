@@ -44,7 +44,7 @@ func main() {
 
 	tlsOff := *debug || *notls
 	if !tlsOff {
-		log.Printf("Serving TLS for host %s", allowedHost)
+		log.Printf("Serving TLS for host %s", *allowedHost)
 		log.Printf("Storing certs in %s", *certCache)
 	}
 
@@ -64,7 +64,7 @@ func run(p int, tlsOff bool, certDir string, router *mux.Router) {
 	)
 
 	router.HandleFunc("/v1", s.Handler)
-	router.HandleFunc("/auth", auth.Dummy())
+	router.HandleFunc("/auth", auth.Dummy(clientID, clientSecret))
 
 	if tlsOff { // no TLS
 
@@ -74,9 +74,9 @@ func run(p int, tlsOff bool, certDir string, router *mux.Router) {
 
 		m := &autocert.Manager{
 			Prompt:     autocert.AcceptTOS,
-			HostPolicy: autocert.HostWhitelist(allowedHost),
+			HostPolicy: autocert.HostWhitelist(*allowedHost),
 			Cache:      autocert.DirCache(certDir),
-			Email:      supportEmail,
+			Email:      *supportEmail,
 		}
 
 		srv := &http.Server{
