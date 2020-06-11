@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"golang.org/x/crypto/acme/autocert"
 
@@ -12,20 +13,30 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/thorfour/stocktopus/pkg/auth"
-	"github.com/thorfour/stocktopus/pkg/cfg"
 	"github.com/thorfour/stocktopus/pkg/slack"
 	"github.com/thorfour/stocktopus/pkg/stock"
 )
 
 var (
-	port      = flag.Int("p", 443, "port to serve on")
-	notls     = flag.Bool("n", false, "turn off TLS")
-	debug     = flag.Bool("d", false, "turn on debugging. Disable TLS")
-	certCache = flag.String("c", "/cert", "location to store certs")
+	port         = flag.Int("p", 443, "port to serve on")
+	notls        = flag.Bool("n", false, "turn off TLS")
+	debug        = flag.Bool("d", false, "turn on debugging. Disable TLS")
+	certCache    = flag.String("c", "/cert", "location to store certs")
+	allowedHost  = flag.String("host", "api.stocktopus.io", "ACME allowed FQDN")
+	supportEmail = flag.String("email", "support@stocktopus.io", "ACME support email")
+
+	redisPW      string
+	redisAddr    string
+	clientID     string
+	clientSecret string
 )
 
 func init() {
 	flag.Parse()
+	redisPW = os.Getenv("REDISPW")
+	redisAddr = os.Getenv("REDISADDR")
+	clientID = os.Getenv("CLIENTID")
+	clientSecret = os.Getenv("CLIENTSECRET")
 }
 
 func main() {
@@ -33,7 +44,7 @@ func main() {
 
 	tlsOff := *debug || *notls
 	if !tlsOff {
-		log.Printf("Serving TLS for host %s", cfg.AllowedHost)
+		log.Printf("Serving TLS for host %s", allowedHost)
 		log.Printf("Storing certs in %s", *certCache)
 	}
 
@@ -46,8 +57,8 @@ func main() {
 func run(p int, tlsOff bool, certDir string, router *mux.Router) {
 
 	s := slack.New(redis.NewClient(&redis.Options{
-		Addr:     "",
-		Password: "",
+		Addr:     redisAddr,
+		Password: redisPW,
 	}),
 		&stock.IexWrapper{},
 	)
@@ -63,9 +74,9 @@ func run(p int, tlsOff bool, certDir string, router *mux.Router) {
 
 		m := &autocert.Manager{
 			Prompt:     autocert.AcceptTOS,
-			HostPolicy: autocert.HostWhitelist(cfg.AllowedHost),
+			HostPolicy: autocert.HostWhitelist(allowedHost),
 			Cache:      autocert.DirCache(certDir),
-			Email:      cfg.SupportEmail,
+			Email:      supportEmail,
 		}
 
 		srv := &http.Server{
