@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/thorfour/iex/pkg/types"
 	"github.com/thorfour/stocktopus/pkg/stock"
+	"github.com/thorfour/stocktopus/pkg/stocktopus"
 )
 
 // fakeLookup implementes the stock.Lookup interface
@@ -61,17 +62,16 @@ func TestCommands(t *testing.T) {
 		{
 			name: "single quote",
 			text: "amd",
-			err:  nil,
 		},
 		{
 			name: "retrieve empty group list",
 			text: "list #mylist",
-			err:  errors.New("No List"),
+			err:  stocktopus.ErrNoList,
 		},
 		{
 			name: "retrieve empty list",
 			text: "list",
-			err:  errors.New("No List"),
+			err:  stocktopus.ErrNoList,
 		},
 		{
 			name: "add to group list",
@@ -120,7 +120,7 @@ func TestCommands(t *testing.T) {
 		{
 			name: "buy insufficient",
 			text: "buy amd 1",
-			err:  errors.New("Insufficient funds"),
+			err:  stocktopus.ErrInsufficientFunds,
 		},
 		{
 			name: "deposit 1k",
@@ -137,7 +137,7 @@ func TestCommands(t *testing.T) {
 		{
 			name: "sell amd too many",
 			text: "sell amd 10",
-			err:  errors.New("Not enough shares"),
+			err:  stocktopus.ErrNumShares,
 		},
 		{
 			name: "sell amd",
@@ -150,10 +150,6 @@ func TestCommands(t *testing.T) {
 		{
 			name: "stats",
 			text: "stats amd",
-		},
-		{
-			name: "stats with filter",
-			text: "stats amd beta",
 		},
 		{
 			name: "news",
@@ -169,7 +165,7 @@ func TestCommands(t *testing.T) {
 			v.Add("team_id", "team")
 			v.Add("text", test.text)
 			_, err := s.Process(context.Background(), v)
-			require.Equal(t, test.err, err)
+			require.True(t, errors.Is(err, test.err))
 		})
 	}
 }

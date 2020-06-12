@@ -19,6 +19,11 @@ import (
 	"github.com/thorfour/stocktopus/pkg/stocktopus"
 )
 
+var (
+	// ErrNumArgs returned if the correct number of args isn't found
+	ErrNumArgs = fmt.Errorf("Incorrect number of args")
+)
+
 // Supported commands
 const (
 	addToList      = "WATCH"
@@ -108,17 +113,30 @@ func (s *SlashServer) Process(ctx context.Context, args url.Values) (*Response, 
 		return nil, errors.New("Bad request")
 	}
 
+	if len(text) == 0 {
+		return nil, errors.New("Empty request")
+	}
 	text = strings.Split(strings.ToUpper(text[0]), " ")
-	return s.command(ctx, text[0], text[1:], args)
+
+	if len(text) > 1 {
+		return s.command(ctx, text[0], text[1:], args)
+	}
+
+	return s.command(ctx, text[0], nil, args)
 }
 
 // Command processes a stocktopus command
 func (s *SlashServer) command(ctx context.Context, cmd string, args []string, info map[string][]string) (*Response, error) {
-
 	defer s.measureTime(time.Now(), cmd)
+
+	//TODO hedge against not enough args
 
 	switch cmd {
 	case buy:
+		if len(args) != 2 {
+			return nil, ErrNumArgs
+		}
+
 		shares, err := strconv.Atoi(args[1])
 		if err != nil {
 			return nil, err
@@ -134,6 +152,10 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		}, nil
 
 	case sell:
+		if len(args) != 2 {
+			return nil, ErrNumArgs
+		}
+
 		shares, err := strconv.Atoi(args[1])
 		if err != nil {
 			return nil, err
@@ -149,6 +171,9 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		}, nil
 
 	case deposit:
+		if len(args) != 1 {
+			return nil, ErrNumArgs
+		}
 		amount, err := strconv.Atoi(args[0])
 		if err != nil {
 			return nil, err
@@ -165,6 +190,9 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		}, nil
 
 	case portfolio:
+		if len(args) != 0 {
+			return nil, ErrNumArgs
+		}
 		a, err := s.s.Portfolio(ctx, acctKey(info))
 		if err != nil {
 			return nil, fmt.Errorf("Portfolio failed: %w", err)
@@ -181,6 +209,9 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		}, nil
 
 	case reset:
+		if len(args) != 0 {
+			return nil, ErrNumArgs
+		}
 		if err := s.s.Clear(ctx, acctKey(info)); err != nil {
 			return nil, fmt.Errorf("Clear failed: %w", err)
 		}
@@ -191,6 +222,9 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		}, nil
 
 	case addToList:
+		if len(args) == 0 {
+			return nil, ErrNumArgs
+		}
 		if err := s.s.Add(ctx, args, listkey(args, info)); err != nil {
 			return nil, fmt.Errorf("Add failed: %w", err)
 		}
@@ -233,6 +267,9 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		}, nil
 
 	case infoCmd:
+		if len(args) != 1 {
+			return nil, ErrNumArgs
+		}
 		c, err := s.s.Info(args[0])
 		if err != nil {
 			return nil, fmt.Errorf("Info failed: %w", err)
@@ -244,6 +281,9 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		}, nil
 
 	case news:
+		if len(args) != 1 {
+			return nil, ErrNumArgs
+		}
 		news, err := s.s.News(args[0])
 		if err != nil {
 			return nil, fmt.Errorf("News failed: %w", err)
@@ -255,6 +295,9 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		}, nil
 
 	case stats:
+		if len(args) != 1 {
+			return nil, ErrNumArgs
+		}
 		stats, err := s.s.Stats(args[0])
 		if err != nil {
 			return nil, fmt.Errorf("Stats failed: %w", err)
@@ -268,6 +311,9 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		}, nil
 
 	default:
+		// treat cmd as a ticker
+		args = append(args, cmd)
+
 		wl, err := s.s.GetQuotes(args)
 		if err != nil {
 			return nil, fmt.Errorf("GetQuotes failed: %w", err)

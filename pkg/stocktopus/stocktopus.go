@@ -16,6 +16,15 @@ import (
 var (
 	// ErrInvalidArguments is returned when the wrong number of args are passed in
 	ErrInvalidArguments = errors.New("Error: invalid number of arguments")
+
+	// ErrInsufficientFunds returns for play money buys that don't have a high enough balance
+	ErrInsufficientFunds = errors.New("Insufficient funds")
+
+	// ErrNumShares not enough shares for given sell action
+	ErrNumShares = errors.New("Not enough shares")
+
+	// ErrNoList when a given is is not found
+	ErrNoList = errors.New("No list")
 )
 
 // Stocktopus facilitates the retrieval and storage of stock information
@@ -54,7 +63,7 @@ func (s *Stocktopus) Print(ctx context.Context, key string) (WatchList, error) {
 	}
 
 	if len(list) == 0 {
-		return nil, fmt.Errorf("No List")
+		return nil, ErrNoList
 	}
 
 	return s.GetQuotes(list)
@@ -119,7 +128,7 @@ func (s *Stocktopus) Buy(ctx context.Context, ticker string, shares uint64, key 
 	}
 
 	if acct.Balance < (price * float64(shares)) {
-		return nil, errors.New("Insufficient funds")
+		return nil, ErrInsufficientFunds
 	}
 
 	// Add to account
@@ -152,7 +161,7 @@ func (s *Stocktopus) Sell(ctx context.Context, ticker string, shares uint64, key
 
 	h, ok := acct.Holdings[ticker]
 	if !ok || h.Shares < shares {
-		return nil, errors.New("Not enough shares")
+		return nil, ErrNumShares
 	}
 
 	newShares := h.Shares - shares
