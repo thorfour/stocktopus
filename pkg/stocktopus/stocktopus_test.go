@@ -8,7 +8,6 @@ import (
 	redis "github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/require"
 	"github.com/thorfour/iex/pkg/types"
-	"github.com/thorfour/stocktopus/pkg/cfg"
 	"github.com/thorfour/stocktopus/pkg/stock"
 )
 
@@ -32,7 +31,6 @@ func TestAccount(t *testing.T) {
 	mr, err := miniredis.Run()
 	require.NoError(t, err)
 	defer mr.Close()
-	cfg.RedisAddr = mr.Addr()
 
 	s := &Stocktopus{
 		KVStore: redis.NewClient(&redis.Options{
@@ -117,7 +115,6 @@ func TestWatchList(t *testing.T) {
 	mr, err := miniredis.Run()
 	require.NoError(t, err)
 	defer mr.Close()
-	cfg.RedisAddr = mr.Addr()
 
 	s := &Stocktopus{
 		KVStore: redis.NewClient(&redis.Options{
