@@ -10,7 +10,6 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/require"
 	"github.com/thorfour/iex/pkg/types"
-	"github.com/thorfour/stocktopus/pkg/cfg"
 	"github.com/thorfour/stocktopus/pkg/stock"
 )
 
@@ -34,7 +33,6 @@ func TestCommands(t *testing.T) {
 	mr, err := miniredis.Run()
 	require.NoError(t, err)
 	defer mr.Close()
-	cfg.RedisAddr = mr.Addr()
 
 	s := New(
 		redis.NewClient(&redis.Options{

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/bndr/gotabulate"
+	"github.com/thorfour/iex/pkg/types"
 	"github.com/thorfour/stocktopus/pkg/stock"
 )
 
@@ -108,4 +109,16 @@ func (a *Account) String() string {
 	table := t.Render("simple")
 	summary := fmt.Sprintf("Portfolio Value: $%0.2f\nBalance: $%0.2f\nTotal: $%0.2f", total, a.Balance, total+a.Balance)
 	return fmt.Sprintf("%v\n%v", table, summary)
+}
+
+// Stats converts a stats object into a string
+func Stats(s *types.Stats) string {
+
+	rows := stock.StatsToRows(s)
+	t := gotabulate.Create(rows)
+	t.SetHeaders([]string{"Stat", "Value"})
+	t.SetAlign("left")
+	t.SetHideLines([]string{"bottomLine", "betweenLine", "top"})
+
+	return t.Render("simple")
 }

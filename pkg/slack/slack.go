@@ -117,91 +117,159 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 	case buy:
 		shares, err := strconv.Atoi(args[1])
 		if err != nil {
-			return "", err
-		}
-		a, err := s.s.Buy(ctx, args[0], uint64(shares), acctKey(info))
-		if err != nil {
-			return "", err
+			return nil, err
 		}
 
-		return a.String(), nil
+		if _, err := s.s.Buy(ctx, args[0], uint64(shares), acctKey(info)); err != nil {
+			return nil, err
+		}
+
+		return &Response{
+			ResponseType: ephemeral,
+			Text:         "Done",
+		}, nil
+
 	case sell:
 		shares, err := strconv.Atoi(args[1])
 		if err != nil {
-			return "", err
-		}
-		a, err := s.s.Sell(ctx, args[0], uint64(shares), acctKey(info))
-		if err != nil {
-			return "", err
+			return nil, err
 		}
 
-		return a.String(), nil
+		if _, err := s.s.Sell(ctx, args[0], uint64(shares), acctKey(info)); err != nil {
+			return nil, err
+		}
+
+		return &Response{
+			ResponseType: ephemeral,
+			Text:         "Done",
+		}, nil
+
 	case deposit:
 		amount, err := strconv.Atoi(args[0])
 		if err != nil {
-			return "", err
-		}
-		a, err := s.s.Deposit(ctx, float64(amount), acctKey(info))
-		if err != nil {
-			return "", err
+			return nil, err
 		}
 
-		return a.String(), nil
+		a, err := s.s.Deposit(ctx, float64(amount), acctKey(info))
+		if err != nil {
+			return nil, err
+		}
+
+		return &Response{
+			ResponseType: ephemeral,
+			Text:         fmt.Sprintf("New Balance: %v", a.Balance),
+		}, nil
+
 	case portfolio:
 		a, err := s.s.Portfolio(ctx, acctKey(info))
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 
 		a, err = s.s.Latest(ctx, a)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 
-		return a.String(), nil
+		return &Response{
+			ResponseType: inchannel,
+			Text:         fmt.Sprintf("```%v```", a.String()),
+		}, nil
+
 	case reset:
-		return "", s.s.Clear(ctx, acctKey(info))
-	case addToList:
-		return "", s.s.Add(ctx, args, listkey(args, info))
-	case printList:
-		acct, err := s.s.Print(ctx, listkey(args, info))
-		if err != nil {
-			return "", err
+		if err := s.s.Clear(ctx, acctKey(info)); err != nil {
+			return nil, err
 		}
 
-		return acct.String(), nil
+		return &Response{
+			ResponseType: ephemeral,
+			Text:         "New Balance: 0",
+		}, nil
+
+	case addToList:
+		if err := s.s.Add(ctx, args, listkey(args, info)); err != nil {
+			return nil, err
+		}
+
+		return &Response{
+			ResponseType: ephemeral,
+			Text:         "Added",
+		}, nil
+
+	case printList:
+		a, err := s.s.Print(ctx, listkey(args, info))
+		if err != nil {
+			return nil, err
+		}
+
+		return &Response{
+			ResponseType: inchannel,
+			Text:         fmt.Sprintf("```%v```", a.String()),
+		}, nil
+
 	case removeFromList:
-		return "", s.s.Remove(ctx, args, listkey(args, info))
+		if err := s.s.Remove(ctx, args, listkey(args, info)); err != nil {
+		}
+
+		return &Response{
+			ResponseType: ephemeral,
+			Text:         "Removed",
+		}, nil
 	case clear:
-		return "", s.s.Clear(ctx, listkey(args, info))
+		if err := s.s.Clear(ctx, listkey(args, info)); err != nil {
+			return nil, err
+		}
+
+		return &Response{
+			ResponseType: ephemeral,
+			Text:         "Removed",
+		}, nil
+
 	case infoCmd:
 		c, err := s.s.Info(args[0])
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 
-		return fmt.Sprintf("%v", c), nil // TODO
+		return &Response{
+			ResponseType: inchannel,
+			Text:         strings.Join([]string{c.CompanyName, c.Industry, c.Website, c.CEO, c.Description}, "\n"),
+		}, nil
+
 	case news:
 		news, err := s.s.News(args[0])
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 
-		return strings.Join(news, "\n"), nil
+		return &Response{
+			ResponseType: inchannel,
+			Text:         strings.Join(news, "\n\n"),
+		}, nil
+
 	case stats:
 		stats, err := s.s.Stats(args[0])
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 
-		return fmt.Sprintf("%v", stats), nil
+		// TODO filter stats?
+
+		return &Response{
+			ResponseType: inchannel,
+			Text:         fmt.Sprintf("```%v```", stocktopus.Stats(stats)),
+		}, nil
+
 	default:
 		wl, err := s.s.GetQuotes(args)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 
-		return wl.String(), nil
+		return &Response{
+			ResponseType: inchannel,
+			Text:         fmt.Sprintf("```%v```", wl.String()),
+		}, nil
 	}
 }
 
