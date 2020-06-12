@@ -14,6 +14,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sirupsen/logrus"
 	"github.com/thorfour/stocktopus/pkg/stock"
 	"github.com/thorfour/stocktopus/pkg/stocktopus"
 )
@@ -80,18 +81,21 @@ func (s *SlashServer) Handler(resp http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 
 	if err := req.ParseForm(); err != nil {
+		logrus.Error("msg", "error parse form", "err", err)
 		http.Error(resp, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	msg, err := s.Process(ctx, req.Form)
 	if err != nil {
+		logrus.Error("msg", "Process error", "err", err)
 		http.Error(resp, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	resp.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(resp).Encode(msg); err != nil {
+		logrus.Error("msg", "encoding failure", "err", err)
 		http.Error(resp, err.Error(), http.StatusInternalServerError)
 		return
 	}
