@@ -195,6 +195,10 @@ func (s *Stocktopus) Portfolio(ctx context.Context, key string) (*Account, error
 
 // Latest populates the Latest map in the account (it is not saved)
 func (s *Stocktopus) Latest(ctx context.Context, acct *Account) (*Account, error) {
+	if len(acct.Holdings) == 0 {
+		return acct, nil
+	}
+
 	tickers := make([]string, 0, len(acct.Holdings))
 	for ticker := range acct.Holdings {
 		tickers = append(tickers, ticker)
