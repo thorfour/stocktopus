@@ -19,11 +19,7 @@ setup:
 	mkdir -p ./bin/
 bin: setup
 	$(go) build -o ./bin/stocktopus ./cmd/stocktopus
-bin-alpha:
-	$(go) build -tags ALPHA -o ./bin/stocktopus ./cmd/server
 docker: bin
-	docker build . -t quay.io/thorfour/stocktopus
-docker-alpha: bin-alpha 
 	docker build . -t quay.io/thorfour/stocktopus
 clean:
 	rm -r ./bin
