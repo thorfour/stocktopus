@@ -105,9 +105,7 @@ go.opentelemetry.io/otel/api/unit
 golang.org/x/crypto/acme
 golang.org/x/crypto/acme/autocert
 # golang.org/x/net v0.0.0-20200520004742-59133d7f0dd7
-## explicit
 golang.org/x/net/idna
-golang.org/x/net/websocket
 # golang.org/x/sys v0.0.0-20200519105757-fe76b779f299
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
