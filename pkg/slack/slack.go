@@ -19,6 +19,11 @@ import (
 	"github.com/thorfour/stocktopus/pkg/stocktopus"
 )
 
+var (
+	// ErrNumArgs returned if the correct number of args isn't found
+	ErrNumArgs = fmt.Errorf("Incorrect number of args")
+)
+
 // Supported commands
 const (
 	addToList      = "WATCH"
@@ -81,21 +86,21 @@ func (s *SlashServer) Handler(resp http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 
 	if err := req.ParseForm(); err != nil {
-		logrus.Error("msg", "error parse form", "err", err)
+		logrus.WithField("msg", "error parse form").Error(err)
 		http.Error(resp, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	msg, err := s.Process(ctx, req.Form)
 	if err != nil {
-		logrus.Error("msg", "Process error", "err", err)
+		logrus.WithField("msg", "Process failure").Error(err)
 		http.Error(resp, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	resp.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(resp).Encode(msg); err != nil {
-		logrus.Error("msg", "encoding failure", "err", err)
+		logrus.WithField("msg", "encoding failure").Error(err)
 		http.Error(resp, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -108,24 +113,37 @@ func (s *SlashServer) Process(ctx context.Context, args url.Values) (*Response, 
 		return nil, errors.New("Bad request")
 	}
 
+	if len(text) == 0 {
+		return nil, errors.New("Empty request")
+	}
 	text = strings.Split(strings.ToUpper(text[0]), " ")
-	return s.command(ctx, text[0], text[1:], args)
+
+	if len(text) > 1 {
+		return s.command(ctx, text[0], text[1:], args)
+	}
+
+	return s.command(ctx, text[0], nil, args)
 }
 
 // Command processes a stocktopus command
 func (s *SlashServer) command(ctx context.Context, cmd string, args []string, info map[string][]string) (*Response, error) {
-
 	defer s.measureTime(time.Now(), cmd)
+
+	//TODO hedge against not enough args
 
 	switch cmd {
 	case buy:
+		if len(args) != 2 {
+			return nil, ErrNumArgs
+		}
+
 		shares, err := strconv.Atoi(args[1])
 		if err != nil {
 			return nil, err
 		}
 
 		if _, err := s.s.Buy(ctx, args[0], uint64(shares), acctKey(info)); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Buy failed: %w", err)
 		}
 
 		return &Response{
@@ -134,13 +152,17 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		}, nil
 
 	case sell:
+		if len(args) != 2 {
+			return nil, ErrNumArgs
+		}
+
 		shares, err := strconv.Atoi(args[1])
 		if err != nil {
 			return nil, err
 		}
 
 		if _, err := s.s.Sell(ctx, args[0], uint64(shares), acctKey(info)); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Sell failed: %w", err)
 		}
 
 		return &Response{
@@ -149,6 +171,9 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		}, nil
 
 	case deposit:
+		if len(args) != 1 {
+			return nil, ErrNumArgs
+		}
 		amount, err := strconv.Atoi(args[0])
 		if err != nil {
 			return nil, err
@@ -156,7 +181,7 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 
 		a, err := s.s.Deposit(ctx, float64(amount), acctKey(info))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Deposit failed: %w", err)
 		}
 
 		return &Response{
@@ -165,24 +190,30 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		}, nil
 
 	case portfolio:
+		if len(args) != 0 {
+			return nil, ErrNumArgs
+		}
 		a, err := s.s.Portfolio(ctx, acctKey(info))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Portfolio failed: %w", err)
 		}
 
 		a, err = s.s.Latest(ctx, a)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Latest failed: %w", err)
 		}
 
 		return &Response{
 			ResponseType: inchannel,
-			Text:         fmt.Sprintf("```%v```", a.String()),
+			Text:         fmt.Sprintf("```%s```", a),
 		}, nil
 
 	case reset:
+		if len(args) != 0 {
+			return nil, ErrNumArgs
+		}
 		if err := s.s.Clear(ctx, acctKey(info)); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Clear failed: %w", err)
 		}
 
 		return &Response{
@@ -191,8 +222,11 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		}, nil
 
 	case addToList:
+		if len(args) == 0 {
+			return nil, ErrNumArgs
+		}
 		if err := s.s.Add(ctx, args, listkey(args, info)); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Add failed: %w", err)
 		}
 
 		return &Response{
@@ -203,18 +237,19 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 	case printList:
 		a, err := s.s.Print(ctx, listkey(args, info))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Print failed: %w", err)
 		}
 
 		// TODO get chart link
 
 		return &Response{
 			ResponseType: inchannel,
-			Text:         fmt.Sprintf("```%v```", a.String()),
+			Text:         fmt.Sprintf("```%s```", a),
 		}, nil
 
 	case removeFromList:
 		if err := s.s.Remove(ctx, args, listkey(args, info)); err != nil {
+			return nil, fmt.Errorf("Remove failed: %w", err)
 		}
 
 		return &Response{
@@ -223,7 +258,7 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		}, nil
 	case clear:
 		if err := s.s.Clear(ctx, listkey(args, info)); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Clear failed: %w", err)
 		}
 
 		return &Response{
@@ -232,9 +267,12 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		}, nil
 
 	case infoCmd:
+		if len(args) != 1 {
+			return nil, ErrNumArgs
+		}
 		c, err := s.s.Info(args[0])
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Info failed: %w", err)
 		}
 
 		return &Response{
@@ -243,9 +281,12 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		}, nil
 
 	case news:
+		if len(args) != 1 {
+			return nil, ErrNumArgs
+		}
 		news, err := s.s.News(args[0])
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("News failed: %w", err)
 		}
 
 		return &Response{
@@ -254,27 +295,33 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		}, nil
 
 	case stats:
+		if len(args) != 1 {
+			return nil, ErrNumArgs
+		}
 		stats, err := s.s.Stats(args[0])
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Stats failed: %w", err)
 		}
 
 		// TODO filter stats?
 
 		return &Response{
 			ResponseType: inchannel,
-			Text:         fmt.Sprintf("```%v```", stocktopus.Stats(stats)),
+			Text:         fmt.Sprintf("```%s```", stocktopus.Stats(stats)),
 		}, nil
 
 	default:
+		// treat cmd as a ticker
+		args = append(args, cmd)
+
 		wl, err := s.s.GetQuotes(args)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("GetQuotes failed: %w", err)
 		}
 
 		return &Response{
 			ResponseType: inchannel,
-			Text:         fmt.Sprintf("```%v```", wl.String()),
+			Text:         fmt.Sprintf("```%s```", wl),
 		}, nil
 	}
 }
