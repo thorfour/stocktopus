@@ -81,21 +81,21 @@ func (s *SlashServer) Handler(resp http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 
 	if err := req.ParseForm(); err != nil {
-		logrus.Error("msg", "error parse form", "err", err)
+		logrus.WithField("msg", "error parse form").Error(err)
 		http.Error(resp, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	msg, err := s.Process(ctx, req.Form)
 	if err != nil {
-		logrus.Error("msg", "Process error", "err", err)
+		logrus.WithField("msg", "Process failure").Error(err)
 		http.Error(resp, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	resp.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(resp).Encode(msg); err != nil {
-		logrus.Error("msg", "encoding failure", "err", err)
+		logrus.WithField("msg", "encoding failure").Error(err)
 		http.Error(resp, err.Error(), http.StatusInternalServerError)
 		return
 	}
