@@ -93,9 +93,10 @@ func (s *SlashServer) Handler(resp http.ResponseWriter, req *http.Request) {
 
 	msg, err := s.Process(ctx, req.Form)
 	if err != nil {
-		logrus.WithField("msg", "Process failure").Error(err)
-		http.Error(resp, err.Error(), http.StatusBadRequest)
-		return
+		msg = &Response{
+			ResponseType: ephemeral,
+			Text:         err.Error(),
+		}
 	}
 
 	resp.Header().Set("Content-Type", "application/json")
