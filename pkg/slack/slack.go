@@ -1,135 +1,297 @@
 package slack
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"net/url"
+	"strconv"
 	"strings"
+	"time"
 
-	"golang.org/x/net/websocket"
+	"github.com/go-redis/redis/v8"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/thorfour/stocktopus/pkg/stock"
+	"github.com/thorfour/stocktopus/pkg/stocktopus"
+)
+
+// Supported commands
+const (
+	addToList      = "WATCH"
+	printList      = "LIST"
+	removeFromList = "UNWATCH"
+	clear          = "CLEAR"
+	help           = "HELP"
+	infoCmd        = "INFO"
+	news           = "NEWS"
+	stats          = "STATS"
+
+	// Play money commands
+	buy       = "BUY"
+	sell      = "SELL"
+	deposit   = "DEPOSIT"
+	portfolio = "PORTFOLIO"
+	reset     = "RESET"
 )
 
 const (
-	slackAPIURL = string("https://api.slack.com/")
-	rtmstart    = string("https://slack.com/api/rtm.start")
-	messageType = string("message")
+	ephemeral = "ephemeral"
+	inchannel = "in_channel"
 )
 
-// Standard slack message format
-type messageRx struct {
-	Type    string `json:"type"`
-	Channel string `json:"channel"`
-	User    string `json:"user"`
-	Text    string `json:"text"`
-	TS      string `json:"ts"`
-	// TODO does not include edits or subtypes
+// Response is the json struct for a slack response
+type Response struct {
+	ResponseType string `json:"response_type"`
+	Text         string `json:"text"`
 }
 
-// Standard slack message format
-type messageTx struct {
-	ID      uint64 `json:"id"`
-	Type    string `json:"type"`
-	Channel string `json:"channel"`
-	Text    string `json:"text"`
+// SlashServer is a slack server that handles slash commands
+type SlashServer struct {
+	s       *stocktopus.Stocktopus
+	cmdHist *prometheus.HistogramVec
 }
 
-// RTMClient is a real time messaging client for slack
-type RTMClient struct {
-	ws           *websocket.Conn
-	id           string
-	msg          messageRx
-	send         messageTx
-	sendSequence uint64
+// measureTime is a helper function to measure the execution time of a function
+func (s *SlashServer) measureTime(start time.Time, label string) {
+	s.cmdHist.WithLabelValues(label).Observe(time.Since(start).Seconds())
 }
 
-// NewRTMClient returns a new real time messaging client for a given token
-func NewRTMClient(token string) (*RTMClient, error) {
+// New returns a new slash server
+func New(kvstore *redis.Client, stocks stock.Lookup) *SlashServer {
+	return &SlashServer{
+		s: &stocktopus.Stocktopus{
+			KVStore:        kvstore,
+			StockInterface: stocks,
+		},
+		cmdHist: promauto.NewHistogramVec(prometheus.HistogramOpts{
+			Name: "command_timings",
+			Help: "A histogram of cmd request execution times",
+		},
+			[]string{"command"},
+		),
+	}
+}
 
-	// Request an rtm session
-	socketURL, id, err := rtmStart(token)
+// Handler is a http handler func for processing slack slash requests for stocktopus
+func (s *SlashServer) Handler(resp http.ResponseWriter, req *http.Request) {
+	ctx := req.Context()
+
+	if err := req.ParseForm(); err != nil {
+		http.Error(resp, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	msg, err := s.Process(ctx, req.Form)
 	if err != nil {
-		return nil, err
+		http.Error(resp, err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	// Connect to the rtm socket
-	ws, err := websocket.Dial(socketURL, "", slackAPIURL)
-	if err != nil {
-		return nil, err
+	resp.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(resp).Encode(msg); err != nil {
+		http.Error(resp, err.Error(), http.StatusInternalServerError)
+		return
 	}
-
-	return &RTMClient{ws, id, messageRx{}, messageTx{}, 0}, nil
 }
 
-func rtmStart(tok string) (socket string, id string, err error) {
-
-	url := fmt.Sprintf("%v?token=%v&no_unreads=true", rtmstart, tok)
-	resp, err := http.Get(url)
-	if err != nil {
-		return "", "", err
+// Process a slack request
+func (s *SlashServer) Process(ctx context.Context, args url.Values) (*Response, error) {
+	text, ok := args["text"]
+	if !ok {
+		return nil, errors.New("Bad request")
 	}
 
-	if resp.StatusCode != 200 {
-		return "", "", fmt.Errorf("Request Failed: %v", resp.StatusCode)
-	}
-
-	defer resp.Body.Close()
-	jsonData, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", "", err
-	}
-
-	// Json format
-	type self struct {
-		ID string `json:"id"`
-	}
-	type rtmStartResp struct {
-		Ok    bool   `json:"ok"`
-		Error string `json:"error"`
-		URL   string `json:"url"`
-		Self  self   `json:"self"`
-	}
-
-	// Parse the response
-	var data rtmStartResp
-	err = json.Unmarshal(jsonData, &data)
-	if err != nil {
-		return "", "", err
-	}
-
-	if !data.Ok {
-		return "", "", fmt.Errorf(data.Error)
-	}
-
-	return data.URL, data.Self.ID, nil
+	text = strings.Split(strings.ToUpper(text[0]), " ")
+	return s.command(ctx, text[0], text[1:], args)
 }
 
-// Receive receives data until a message for the requested id is obtained
-func (s *RTMClient) Receive() (string, error) {
+// Command processes a stocktopus command
+func (s *SlashServer) command(ctx context.Context, cmd string, args []string, info map[string][]string) (*Response, error) {
 
-	checkMsg := func() error {
-		return websocket.JSON.Receive(s.ws, &s.msg)
+	defer s.measureTime(time.Now(), cmd)
+
+	switch cmd {
+	case buy:
+		shares, err := strconv.Atoi(args[1])
+		if err != nil {
+			return nil, err
+		}
+
+		if _, err := s.s.Buy(ctx, args[0], uint64(shares), acctKey(info)); err != nil {
+			return nil, err
+		}
+
+		return &Response{
+			ResponseType: ephemeral,
+			Text:         "Done",
+		}, nil
+
+	case sell:
+		shares, err := strconv.Atoi(args[1])
+		if err != nil {
+			return nil, err
+		}
+
+		if _, err := s.s.Sell(ctx, args[0], uint64(shares), acctKey(info)); err != nil {
+			return nil, err
+		}
+
+		return &Response{
+			ResponseType: ephemeral,
+			Text:         "Done",
+		}, nil
+
+	case deposit:
+		amount, err := strconv.Atoi(args[0])
+		if err != nil {
+			return nil, err
+		}
+
+		a, err := s.s.Deposit(ctx, float64(amount), acctKey(info))
+		if err != nil {
+			return nil, err
+		}
+
+		return &Response{
+			ResponseType: ephemeral,
+			Text:         fmt.Sprintf("New Balance: %v", a.Balance),
+		}, nil
+
+	case portfolio:
+		a, err := s.s.Portfolio(ctx, acctKey(info))
+		if err != nil {
+			return nil, err
+		}
+
+		a, err = s.s.Latest(ctx, a)
+		if err != nil {
+			return nil, err
+		}
+
+		return &Response{
+			ResponseType: inchannel,
+			Text:         fmt.Sprintf("```%v```", a.String()),
+		}, nil
+
+	case reset:
+		if err := s.s.Clear(ctx, acctKey(info)); err != nil {
+			return nil, err
+		}
+
+		return &Response{
+			ResponseType: ephemeral,
+			Text:         "New Balance: 0",
+		}, nil
+
+	case addToList:
+		if err := s.s.Add(ctx, args, listkey(args, info)); err != nil {
+			return nil, err
+		}
+
+		return &Response{
+			ResponseType: ephemeral,
+			Text:         "Added",
+		}, nil
+
+	case printList:
+		a, err := s.s.Print(ctx, listkey(args, info))
+		if err != nil {
+			return nil, err
+		}
+
+		// TODO get chart link
+
+		return &Response{
+			ResponseType: inchannel,
+			Text:         fmt.Sprintf("```%v```", a.String()),
+		}, nil
+
+	case removeFromList:
+		if err := s.s.Remove(ctx, args, listkey(args, info)); err != nil {
+		}
+
+		return &Response{
+			ResponseType: ephemeral,
+			Text:         "Removed",
+		}, nil
+	case clear:
+		if err := s.s.Clear(ctx, listkey(args, info)); err != nil {
+			return nil, err
+		}
+
+		return &Response{
+			ResponseType: ephemeral,
+			Text:         "Removed",
+		}, nil
+
+	case infoCmd:
+		c, err := s.s.Info(args[0])
+		if err != nil {
+			return nil, err
+		}
+
+		return &Response{
+			ResponseType: inchannel,
+			Text:         strings.Join([]string{c.CompanyName, c.Industry, c.Website, c.CEO, c.Description}, "\n"),
+		}, nil
+
+	case news:
+		news, err := s.s.News(args[0])
+		if err != nil {
+			return nil, err
+		}
+
+		return &Response{
+			ResponseType: inchannel,
+			Text:         strings.Join(news, "\n\n"),
+		}, nil
+
+	case stats:
+		stats, err := s.s.Stats(args[0])
+		if err != nil {
+			return nil, err
+		}
+
+		// TODO filter stats?
+
+		return &Response{
+			ResponseType: inchannel,
+			Text:         fmt.Sprintf("```%v```", stocktopus.Stats(stats)),
+		}, nil
+
+	default:
+		wl, err := s.s.GetQuotes(args)
+		if err != nil {
+			return nil, err
+		}
+
+		return &Response{
+			ResponseType: inchannel,
+			Text:         fmt.Sprintf("```%v```", wl.String()),
+		}, nil
 	}
-
-	var err error
-	directMsg := fmt.Sprintf("<@%v>: ", s.id)
-	for err = checkMsg(); err != nil || !strings.HasPrefix(s.msg.Text, directMsg) || s.msg.Type != messageType; {
-		err = checkMsg()
-	}
-
-	text := s.msg.Text[len(s.id)+5:]
-	return text, nil
 }
 
-// Send a response to the same channel as previous received message
-func (s *RTMClient) Send(m string) error {
+func listkey(text []string, decodedMap url.Values) string {
 
-	// Setup the send message
-	s.send.Channel = s.msg.Channel
-	s.sendSequence++
-	s.send.ID = s.sendSequence
-	s.send.Text = m
-	s.send.Type = messageType
+	// User and token to be used as watch list lookup
+	user := decodedMap["user_id"]
+	token := decodedMap["token"]
 
-	return websocket.JSON.Send(s.ws, &s.send)
+	// If the first arg starts with '#' then it's the name of the list
+	if len(text) > 0 && strings.HasPrefix(text[0], "#") {
+		user = []string{strings.ToLower(text[0][1:]), decodedMap["team_id"][0]}
+	}
+
+	return fmt.Sprintf("%v%v", token, user)
+}
+
+func acctKey(decodedMap url.Values) string {
+	// User and token to be used as lookup
+	user := decodedMap["user_id"]
+	token := decodedMap["token"]
+	return fmt.Sprintf("%v%v%v", "ACCT", token, user)
 }

@@ -1,744 +1,293 @@
 package stocktopus
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/url"
-	"reflect"
 	"sort"
-	"strconv"
 	"strings"
-	"time"
 
-	redis "gopkg.in/redis.v5"
-
-	"github.com/bndr/gotabulate"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	log "github.com/sirupsen/logrus"
-	"github.com/thorfour/stocktopus/pkg/cfg"
+	redis "github.com/go-redis/redis/v8"
+	"github.com/thorfour/iex/pkg/types"
 	"github.com/thorfour/stocktopus/pkg/stock"
 )
 
-type cmdFunc func([]string, url.Values) (string, error)
-
-type cmdInfo struct {
-	funcPtr cmdFunc // Function pointer to the function to execute
-	helpStr string  // help string
-}
-
-// Supported commands
-const (
-	addToList      = "WATCH"
-	printList      = "LIST"
-	removeFromList = "UNWATCH"
-	clear          = "CLEAR"
-	help           = "HELP"
-	info           = "INFO"
-	news           = "NEWS"
-	stats          = "STATS"
-
-	// Play money commands
-	buy       = "BUY"
-	sell      = "SELL"
-	short     = "SHORT"
-	deposit   = "DEPOSIT"
-	portfolio = "PORTFOLIO"
-	reset     = "RESET"
-)
-
 var (
-	cmds    map[string]cmdInfo
-	cmdHist = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "command_timings",
-		Help: "A histogram of cmd request execution times",
-	}, []string{"command"})
+	// ErrInvalidArguments is returned when the wrong number of args are passed in
+	ErrInvalidArguments = errors.New("Error: invalid number of arguments")
 )
 
-// Mapping of command string to function
-func init() {
-	cmds = map[string]cmdInfo{
-		// List actions
-		addToList:      {add, "*watch (#list) [tickers...]* add tickers to personal watch list"},
-		printList:      {print, "*list (#list)*               print out personal watch list"},
-		removeFromList: {remove, "*unwatch (#list) [ticker]*   remove single ticker from watch list"},
-		clear:          {clearList, "*clear (#list)*              remove entire watch list"},
-
-		// Info actions
-		info:  {getInfo, "*info [ticker]* print a company profile"},
-		news:  {getNews, "*news ticker* Displays the latest news for a company"},
-		stats: {getStats, "*stats [ticker] (field options...)* print out statistics for a company"},
-		help:  {printHelp, "*[tickers...]*       pull stock quotes for list of tickers"},
-
-		// Play money actions
-		deposit:   {depositPlay, "*deposit [amount]* deposit amount of play money into account"},
-		reset:     {resetPlay, "*reset* resets account"},
-		portfolio: {portfolioPlay, "*portfolio* Prints current portfolio of play money"},
-		buy:       {buyPlay, "*buy [ticker] [shares]* Purchases number of shares in a security with play money"},
-		sell:      {sellPlay, "*sell [ticker] [shares]* Sells number of shares of specified security"},
-	}
+// Stocktopus facilitates the retrieval and storage of stock information
+type Stocktopus struct {
+	KVStore        *redis.Client
+	StockInterface stock.Lookup
 }
 
-type stockFunc func(string) (string, error)
-
-// measureTime is a helper function to measure the execution time of a function
-func measureTime(start time.Time, label string) {
-	cmdHist.WithLabelValues(label).Observe(time.Since(start).Seconds())
-}
-
-// Process url string to provide stocktpus functionality
-func Process(args url.Values) (string, error) {
-	text, ok := args["text"]
-	if !ok {
-		return "", errors.New("Bad request")
-	}
-
-	text = strings.Split(strings.ToUpper(text[0]), " ")
-	cmd, ok := cmds[text[0]]
-	if !ok {
-		return getQuotes(args["text"][0], args)
-	}
-	return cmd.funcPtr(text, args)
-}
+//-------------------------------------
+//
+// Watch list commands
+//
+//-------------------------------------
 
 // Add ticker(s) to a watch list
-func add(text []string, decodedMap url.Values) (string, error) {
-	defer measureTime(time.Now(), "add")
-
-	if len(text) < 2 { // Must be something to add to watch list
-		return "", errors.New("Error: Invalid number of arguments")
+func (s *Stocktopus) Add(ctx context.Context, tickers []string, key string) error {
+	if len(tickers) == 0 {
+		return ErrInvalidArguments
 	}
 
-	// Chop off addToList arg
-	text = text[1:]
-
-	// User and token to be used as watch list lookup
-	user := decodedMap["user_id"]
-	token := decodedMap["token"]
-
-	// If the first arg starts with '#' then it's the name of the list
-	if text[0][0] == '#' {
-		user = []string{strings.ToLower(text[0][1:]), decodedMap["team_id"][0]}
-		text = text[1:] // Remove list name
+	if _, err := s.KVStore.SAdd(ctx, key, tickers).Result(); err != nil {
+		return fmt.Errorf("SAdd failed: %w", err)
 	}
 
-	key := fmt.Sprintf("%v%v", token, user)
+	return nil
+}
 
-	rClient := connectRedis()
-
-	// Convert []string to []interface{} for the SAdd call
-	members := []interface{}{}
-	for _, member := range text {
-		members = append(members, interface{}(member))
-	}
-
-	_, err := rClient.SAdd(key, members...).Result()
+// Print returns a watchlist
+func (s *Stocktopus) Print(ctx context.Context, key string) (WatchList, error) {
+	list, err := s.KVStore.SMembers(ctx, key).Result()
 	if err != nil {
-		return "", fmt.Errorf("Error addtolist: %v", err)
-	}
-
-	// Not an error but message of Added should be supressed
-	return "", errors.New("Added")
-}
-
-// Print out a watchlist
-func print(text []string, decodedMap url.Values) (string, error) {
-	defer measureTime(time.Now(), "print")
-
-	// User and token to be used as watch list lookup
-	user := decodedMap["user_id"]
-	token := decodedMap["token"]
-
-	// Chop off printList arg
-	text = text[1:]
-
-	// If the first arg starts with '#' then it's the name of the list
-	if len(text) == 1 && text[0][0] == '#' {
-		user = []string{strings.ToLower(text[0][1:]), decodedMap["team_id"][0]}
-		text = text[1:] // Remove list name
-	} else if len(text) >= 1 {
-		return "", errors.New("Error: Invalid number arguments")
-	}
-
-	key := fmt.Sprintf("%v%v", token, user)
-
-	rClient := connectRedis()
-
-	// Get and print watch list
-	list, err := rClient.SMembers(key).Result()
-	if err != nil || len(list) == 0 {
-		return "", errors.New("Error: No List")
-	}
-
-	return getQuotes(strings.Join(list, " "), decodedMap)
-}
-
-// Remove a single ticker from a watch list
-func remove(text []string, decodedMap url.Values) (string, error) {
-	defer measureTime(time.Now(), "remove")
-
-	// Chop off printList arg
-	text = text[1:]
-
-	// User and token to be used as watch list lookup
-	user := decodedMap["user_id"]
-	token := decodedMap["token"]
-
-	// If the first arg starts with '#' then it's the name of the list
-	if len(text) > 1 && text[0][0] == '#' {
-		user = []string{strings.ToLower(text[0][1:]), decodedMap["team_id"][0]}
-		text = text[1:] // Remove list name
-	}
-
-	key := fmt.Sprintf("%v%v", token, user)
-
-	rClient := connectRedis()
-
-	// Convert []string to []interface{} for the SRem call
-	members := []interface{}{}
-	for _, member := range text {
-		members = append(members, interface{}(member))
-	}
-
-	// Remove from watch list
-	_, err := rClient.SRem(key, members...).Result()
-	if err != nil {
-		return "", fmt.Errorf("Error rmfromlist: %v", err)
-	}
-
-	return "", errors.New("Removed")
-}
-
-// Delete a watch list. Deletes the whole file instead of clearing
-func clearList(text []string, decodedMap url.Values) (string, error) {
-	defer measureTime(time.Now(), "clear")
-
-	user := decodedMap["user_id"]
-	token := decodedMap["token"]
-
-	// Chop off printList arg
-	text = text[1:]
-
-	// If the first arg starts with '#' then it's the name of the list
-	if len(text) == 1 && text[0][0] == '#' {
-		user = []string{strings.ToLower(text[0][1:]), decodedMap["team_id"][0]}
-		text = text[1:] // Remove list name
-	} else if len(text) >= 1 {
-		return "", errors.New("Error: Invalid number arguments")
-	}
-
-	key := fmt.Sprintf("%v%v", token, user)
-
-	rClient := connectRedis()
-
-	_, err := rClient.Del(key).Result()
-	if err != nil {
-		return "", fmt.Errorf("Error clear: %v", err)
-	}
-
-	return "", errors.New("Removed")
-}
-
-// Prints out help information about supported commands
-func printHelp(text []string, decodedMap url.Values) (string, error) {
-	defer measureTime(time.Now(), "help")
-
-	var out string
-	for _, val := range cmds {
-		out = fmt.Sprintf("%v\n%v", out, val.helpStr)
-	}
-
-	return "", errors.New(out)
-}
-
-// text is expected to be a list of tickers separated by spaces
-func getMultiQuote(text string) ([]*stock.Quote, error) {
-	tickers := strings.Split(text, " ")
-	batch, err := stockInterface.BatchQuotes(tickers)
-	if err != nil {
-		log.WithField("tickers", tickers).Error(err.Error())
-		return nil, fmt.Errorf("Failed to get quotes")
-	}
-
-	return batch, nil
-}
-
-// Default functionality of grabbing stock quote(s)
-func getQuotes(text string, decodedMap url.Values) (string, error) {
-	defer measureTime(time.Now(), "quotes")
-
-	var chartFunc stockFunc
-	var quote string
-
-	// Pull the quote
-	info, err := getMultiQuote(text)
-	if err != nil {
-		return "", fmt.Errorf("Error: %v", err)
-	}
-
-	// Nothing was returned
-	if len(info) == 0 {
-		return "", errors.New("There's nothing here")
-	}
-
-	// sort info by changePercent
-	sort.Sort(sortableList(info))
-
-	rows := make([][]interface{}, 0, len(info))
-	cumsum := float64(0)
-	for _, quote := range info {
-		rows = append(rows, []interface{}{quote.Ticker, quote.LatestPrice, fmt.Sprintf("%0.2f", quote.Change), fmt.Sprintf("%0.3f", (100 * quote.ChangePercent))})
-		cumsum += (100 * quote.ChangePercent)
-	}
-	rows = append(rows, []interface{}{"Avg.", "---", "---", fmt.Sprintf("%0.3f%%", cumsum/float64(len(rows)))})
-
-	t := gotabulate.Create(rows)
-	t.SetHeaders([]string{"Company", "Current Price", "Todays Change", "Percent Change"})
-	t.SetAlign("right")
-	t.SetHideLines([]string{"bottomLine", "betweenLine", "top"})
-	quote = t.Render("simple")
-	quote = fmt.Sprintf("```%v```", quote)
-
-	// Pull a chart if single stock requested
-	if len(rows) == 2 {
-
-		if len(text) == 6 {
-			chartFunc = getChartLinkCurrencyFinviz
-		} else {
-			chartFunc = getChartLinkFinviz
+		if errors.Is(err, redis.Nil) {
+			return nil, nil
 		}
-
-		// Pull a stock chart
-		chartURL, err := chartFunc(text)
-		if err != nil {
-			return "", fmt.Errorf("Error: %v", err)
-		}
-
-		quote = fmt.Sprintf("%v\n%v", quote, chartURL)
+		return nil, fmt.Errorf("SMembers failed: %w", err)
 	}
 
-	return quote, nil
+	if len(list) == 0 {
+		return nil, fmt.Errorf("No List")
+	}
+
+	return s.GetQuotes(list)
 }
 
-// Print out a company profile
-func getInfo(text []string, decodedMap url.Values) (string, error) {
-	defer measureTime(time.Now(), "info")
-
-	if len(text) != 2 {
-		return "", errors.New("Error: Invalid number of arguments")
+// Remove ticker(s) from a watch list
+func (s *Stocktopus) Remove(ctx context.Context, tickers []string, key string) error {
+	if len(tickers) == 0 {
+		return ErrInvalidArguments
 	}
 
-	// Chop off arg
-	text = text[1:]
-
-	info, err := stockInterface.Company(text[0])
-	if err != nil {
-		return "", errors.New("Error: Unable to find info")
+	if _, err := s.KVStore.SRem(ctx, key, tickers).Result(); err != nil {
+		return fmt.Errorf("SRem failed: %w", err)
 	}
 
-	return strings.Join([]string{info.CompanyName, info.Industry, info.Website, info.CEO, info.Description}, "\n"), nil
+	return nil
 }
 
-//--------------------
-// Play money
-//--------------------
+// Clear a watchlist or account by deleting the key from the KVStore
+func (s *Stocktopus) Clear(ctx context.Context, key string) error {
+	if _, err := s.KVStore.Del(ctx, key).Result(); err != nil {
+		return fmt.Errorf("Del failed: %w", err)
+	}
 
-// account is a users play money account information
-type account struct {
-	Balance  float64
-	Holdings map[string]holding
+	return nil
 }
 
-type holding struct {
-	Strike float64 // Strike price of the purchase
-	Shares uint64  // number of shares being held
-}
+//-------------------------------------
+//
+// Play money actions
+//
+//-------------------------------------
 
-func depositPlay(text []string, decodedMap url.Values) (string, error) {
-	defer measureTime(time.Now(), "deposit")
-
-	if len(text) != 2 { // Must have an amount to add
-		return "", errors.New("Error: Invalid number arguments")
-	}
-
-	// Chop off deposit arg
-	text = text[1:]
-
-	// Parse amount to add to account
-	amt, err := strconv.ParseUint(text[0], 10, 64)
+// Deposit play money in account
+// NOTE: amount is a float because of legacy mistakes
+func (s *Stocktopus) Deposit(ctx context.Context, amount float64, key string) (*Account, error) {
+	acct, err := s.account(ctx, key)
 	if err != nil {
-		return "", fmt.Errorf("Invalid amount: %v", err)
+		return nil, err
 	}
 
-	// User and token to be used as lookup
-	user := decodedMap["user_id"]
-	token := decodedMap["token"]
-	key := fmt.Sprintf("%v%v%v", "ACCT", token, user)
+	acct.Balance += amount
 
-	client := connectRedis()
-
-	// Load the account
-	acct, err := loadAccount(client, key)
-	if err != nil {
-		// If no file exits then create a new account
-		newAcct := new(account)
-		newAcct.Holdings = make(map[string]holding)
-		newAcct.Balance = float64(amt)
-		saveAccount(client, newAcct, key)
-		return "", fmt.Errorf("New Balance: %v", newAcct.Balance)
-	}
-
-	// Add amount to balance
-	acct.Balance += float64(amt)
-
-	err = saveAccount(client, acct, key)
-	if err != nil {
-		return "", fmt.Errorf("Unable to save account: %v", err)
-	}
-
-	// Respond with the new balance
-	resp := fmt.Sprintf("New Balance: %v", acct.Balance)
-	return "", errors.New(resp)
-}
-
-func resetPlay(text []string, decodedMap url.Values) (string, error) {
-	defer measureTime(time.Now(), "reset")
-
-	if len(text) != 1 { // Only reset accepted
-		return "", errors.New("Error: Invalid number arguments")
-	}
-
-	// User and token to be used as lookup
-	user := decodedMap["user_id"]
-	token := decodedMap["token"]
-	key := fmt.Sprintf("%v%v%v", "ACCT", token, user)
-
-	client := connectRedis()
-
-	newAcct := new(account)
-	newAcct.Holdings = make(map[string]holding)
-	newAcct.Balance = float64(0)
-	saveAccount(client, newAcct, key)
-	return "", fmt.Errorf("New Balance: %v", newAcct.Balance)
-}
-
-func portfolioPlay(text []string, decodedMap url.Values) (string, error) {
-	defer measureTime(time.Now(), "portfolio")
-
-	if len(text) != 1 { // Only portfolio accepted
-		return "", errors.New("Error: Invalid number arguments")
-	}
-
-	// User and token to be used as lookup
-	user := decodedMap["user_id"]
-	token := decodedMap["token"]
-	key := fmt.Sprintf("%v%v%v", "ACCT", token, user)
-
-	client := connectRedis()
-
-	acct, err := loadAccount(client, key)
-	if err != nil {
-		return "", errors.New("Unable to load account")
-	}
-
-	total := float64(0)
-	totalChange := float64(0)
-	if len(acct.Holdings) > 0 {
-
-		var list []string // List of all tickers
-		for ticker := range acct.Holdings {
-			list = append(list, ticker)
-		}
-
-		// Pull the quote
-		info, err := getMultiQuote(strings.Join(list, " "))
-		if err != nil {
-			return "", errors.New("Unable to get quotes")
-		}
-
-		rows := make([][]interface{}, 0, len(acct.Holdings))
-		for _, quote := range info {
-			h := acct.Holdings[quote.Ticker]
-			total += float64(h.Shares) * quote.LatestPrice
-			delta := float64(h.Shares) * (quote.LatestPrice - h.Strike)
-			totalChange += delta
-			deltaStr := fmt.Sprintf("%0.2f", delta)
-			rows = append(rows, []interface{}{quote.Ticker, h.Shares, h.Strike, quote.LatestPrice, deltaStr})
-		}
-
-		rows = append(rows, []interface{}{"Total", "---", "---", "---", fmt.Sprintf("%0.2f", totalChange)})
-
-		t := gotabulate.Create(rows)
-		t.SetHeaders([]string{"Ticker", "Shares", "Strike", "Current", "Gain/Loss $"})
-		t.SetAlign("left")
-		t.SetHideLines([]string{"bottomLine", "betweenLine", "top"})
-		table := t.Render("simple")
-		summary := fmt.Sprintf("Portfolio Value: $%0.2f\nBalance: $%0.2f\nTotal: $%0.2f", total, acct.Balance, total+acct.Balance)
-		resp := fmt.Sprintf("```%v\n%v```", table, summary)
-		return resp, nil
-	}
-
-	s := fmt.Sprintf("Balance: $%0.2f", acct.Balance)
-	return s, nil
-}
-
-func buyPlay(text []string, decodedMap url.Values) (string, error) {
-	defer measureTime(time.Now(), "buy")
-
-	if len(text) != 3 { // BUY TICKER SHARES
-		return "", errors.New("Error: Invalid number arguments")
-	}
-
-	// Chop off buy arg
-	text = text[1:]
-
-	// Parse number of shares to purchase
-	amt, err := strconv.ParseUint(text[1], 10, 64)
-	if err != nil {
-		return "", fmt.Errorf("Invalid amount: %v", err)
-	}
-
-	// lookup ticker price
-	ticker := text[0]
-
-	batch, err := stockInterface.BatchQuotes([]string{ticker})
-	if err != nil || len(batch) == 0 {
-		log.WithField("ticker", ticker).Error(err.Error())
-		return "", fmt.Errorf("Unable to get price")
-	}
-
-	price := batch[0].LatestPrice
-
-	// User and token to be used as lookup
-	user := decodedMap["user_id"]
-	token := decodedMap["token"]
-	key := fmt.Sprintf("%v%v%v", "ACCT", token, user)
-
-	client := connectRedis()
-
-	acct, err := loadAccount(client, key)
-	if err != nil {
-		return "", errors.New("Unable to load account")
-	}
-
-	// check if enough money in account
-	if acct.Balance < (price * float64(amt)) {
-		return "", errors.New("Insufficient funds")
-	}
-
-	// add to account
-	acct.Balance -= (price * float64(amt))
-	h, ok := acct.Holdings[ticker]
-	if !ok {
-		acct.Holdings[ticker] = holding{price, amt}
-	} else {
-		newShares := h.Shares + amt
-		acct.Holdings[ticker] = holding{price, newShares}
-	}
-
-	// write account
-	err = saveAccount(client, acct, key)
-	if err != nil {
-		return "", fmt.Errorf("Unable to save account: %v", err)
-	}
-
-	return "", errors.New("Done")
-}
-
-func sellPlay(text []string, decodedMap url.Values) (string, error) {
-	defer measureTime(time.Now(), "sell")
-
-	if len(text) != 3 { // SELL TICKER SHARES
-		return "", errors.New("Error: Invalid number arguments")
-	}
-
-	// Chop off buy arg
-	text = text[1:]
-
-	// Parse number of shares to purchase
-	amt, err := strconv.ParseUint(text[1], 10, 64)
-	if err != nil {
-		return "", fmt.Errorf("Invalid amount: %v", err)
-	}
-
-	// lookup ticker price
-	ticker := text[0]
-	batch, err := stockInterface.BatchQuotes([]string{ticker})
-	if err != nil || len(batch) == 0 {
-		log.WithField("ticker", ticker).Error(err.Error())
-		return "", fmt.Errorf("Unable to get price")
-	}
-
-	price := batch[0].LatestPrice
-
-	// User and token to be used as lookup
-	user := decodedMap["user_id"]
-	token := decodedMap["token"]
-	key := fmt.Sprintf("%v%v%v", "ACCT", token, user)
-
-	client := connectRedis()
-
-	acct, err := loadAccount(client, key)
-	if err != nil {
-		return "", errors.New("Unable to load account")
-	}
-
-	h, ok := acct.Holdings[ticker]
-	if !ok || h.Shares < amt {
-		return "", errors.New("Not enough shares")
-	}
-
-	// remove from account and credit account for the sale
-	newShares := h.Shares - amt
-	if newShares == 0 {
-		delete(acct.Holdings, ticker)
-	} else {
-		acct.Holdings[ticker] = holding{h.Strike, newShares}
-	}
-
-	acct.Balance += float64(amt) * price
-
-	// write account
-	err = saveAccount(client, acct, key)
-	if err != nil {
-		return "", fmt.Errorf("Unable to save account: %v", err)
-	}
-
-	return "", errors.New("Done")
-}
-
-func saveAccount(client *redis.Client, acct *account, key string) error {
-
-	// Encode account
-	serialized, err := json.Marshal(acct)
-	if err != nil {
-		return fmt.Errorf("Unable to encode account")
-	}
-
-	// Save the account to redis
-	_, err = client.Set(key, string(serialized), 0).Result()
-
-	return err
-}
-
-func loadAccount(client *redis.Client, key string) (*account, error) {
-
-	serialized, err := client.Get(key).Result()
-	if err != nil {
-		return nil, fmt.Errorf("Unable to load account: %v", err)
-	}
-
-	// Unserialize acct from file
-	acct := new(account)
-	err = json.Unmarshal([]byte(serialized), acct)
-	if err != nil {
-		return nil, fmt.Errorf("Unable to decode account")
+	if err := s.saveAccount(ctx, key, acct); err != nil {
+		return nil, err
 	}
 
 	return acct, nil
 }
 
-func connectRedis() *redis.Client {
-	return redis.NewClient(&redis.Options{
-		Addr:     cfg.RedisAddr,
-		Password: cfg.RedisPw,
-		DB:       0,
-	})
-}
+// Buy shares for play money portfolio
+func (s *Stocktopus) Buy(ctx context.Context, ticker string, shares uint64, key string) (*Account, error) {
 
-// getNews will print news from requested company
-func getNews(text []string, decodedMap url.Values) (string, error) {
-	defer measureTime(time.Now(), "news")
-
-	if len(text) != 2 {
-		return "", errors.New("Error: Invalid number of arguments")
-	}
-	// Chop off news arg
-	text = text[1:]
-
-	latestNews, err := stockInterface.News(text[0])
+	price, err := s.StockInterface.Price(ticker)
 	if err != nil {
-		return "", errors.New("Error: No news is good news right?")
+		return nil, fmt.Errorf("quote failed: %w", err)
 	}
 
-	// Try and pretty print them
-	var printNews string
-	for _, n := range latestNews {
-		printNews = fmt.Sprintf("%s%s\n\n", printNews, n)
-	}
-
-	return printNews, nil
-}
-
-// getChartLinkCurrencyFinviz returns a currenct chart link from finviz
-func getChartLinkCurrencyFinviz(symbol string) (string, error) {
-
-	symbol = strings.ToUpper(symbol)
-	url := fmt.Sprintf("http://finviz.com/fx_image.ashx?%v_d1_l.png", symbol)
-
-	return url, nil
-}
-
-// getChartLinkFinviz returns a chart link from finviz
-func getChartLinkFinviz(symbol string) (string, error) {
-
-	symbol = strings.ToUpper(symbol)
-	url := fmt.Sprintf("http://finviz.com/chart.ashx?t=%v&ty=c&ta=1&p=d&s=l", symbol)
-
-	return url, nil
-}
-
-func getStats(text []string, _ url.Values) (string, error) {
-	defer measureTime(time.Now(), "stats")
-
-	// chop off stats arg
-	text = text[1:]
-
-	stats, err := stockInterface.Stats(text[0])
+	acct, err := s.account(ctx, key)
 	if err != nil {
-		log.WithField("ticker", text[0]).Error(err.Error())
-		return "", fmt.Errorf("failed to retrieve stats")
+		return nil, err
 	}
 
-	if len(text) == 1 { // user didn't request specific stats, return all of them
-		rows := stock.StatsToRows(stats)
-		t := gotabulate.Create(rows)
-		t.SetHeaders([]string{"Stat", "Value"})
-		t.SetAlign("left")
-		t.SetHideLines([]string{"bottomLine", "betweenLine", "top"})
-		table := t.Render("simple")
-		return fmt.Sprintf("```%v```", table), nil
+	if acct.Balance < (price * float64(shares)) {
+		return nil, errors.New("Insufficient funds")
 	}
 
-	// Pull out only the requested info
-	requested := make(map[string]bool, len(text)-1)
-	for i := 1; i < len(text); i++ {
-		requested[strings.ToLower(text[i])] = true
+	// Add to account
+	acct.Balance -= (price * float64(shares))
+	h := acct.Holdings[ticker]
+	acct.Holdings[ticker] = Holding{
+		Strike: price,
+		Shares: h.Shares + shares,
 	}
 
-	var retStr string
+	if err := s.saveAccount(ctx, key, acct); err != nil {
+		return nil, err
+	}
 
-	// Find the stat inside the struct
-	v := reflect.ValueOf(stats).Elem()
-	for i := 0; i < v.NumField(); i++ {
-		f := v.Field(i)
-		n := strings.ToLower(v.Type().Field(i).Name)
+	return acct, nil
+}
 
-		if requested[n] {
-			retStr = retStr + fmt.Sprintf("%s: %v\n", n, f)
+// Sell shares for play money portfolio
+func (s *Stocktopus) Sell(ctx context.Context, ticker string, shares uint64, key string) (*Account, error) {
+
+	price, err := s.StockInterface.Price(ticker)
+	if err != nil {
+		return nil, fmt.Errorf("quote failed: %w", err)
+	}
+
+	acct, err := s.account(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+
+	h, ok := acct.Holdings[ticker]
+	if !ok || h.Shares < shares {
+		return nil, errors.New("Not enough shares")
+	}
+
+	newShares := h.Shares - shares
+	if newShares == 0 {
+		delete(acct.Holdings, ticker)
+	} else {
+		acct.Holdings[ticker] = Holding{
+			Strike: h.Strike,
+			Shares: newShares,
 		}
 	}
 
-	return retStr, nil
+	acct.Balance += float64(shares) * price
+
+	if err := s.saveAccount(ctx, key, acct); err != nil {
+		return nil, fmt.Errorf("Unable to save account: %w", err)
+	}
+
+	return acct, nil
 }
 
-// sortableList is a sort wrapper around a slice of stock quotes
-// they are sorted by percent change
-type sortableList []*stock.Quote
+// Portfolio returns the account for a given key
+func (s *Stocktopus) Portfolio(ctx context.Context, key string) (*Account, error) {
+	return s.account(ctx, key)
+}
 
-func (s sortableList) Len() int { return len(s) }
+// Latest populates the Latest map in the account (it is not saved)
+func (s *Stocktopus) Latest(ctx context.Context, acct *Account) (*Account, error) {
+	tickers := make([]string, 0, len(acct.Holdings))
+	for ticker := range acct.Holdings {
+		tickers = append(tickers, ticker)
+	}
+	quotes, err := s.GetQuotes(tickers)
+	if err != nil {
+		return nil, err
+	}
 
-func (s sortableList) Less(i, j int) bool { return s[i].ChangePercent > s[j].ChangePercent }
+	// Populate latest prices
+	acct.Latest = map[string]float64{}
+	for _, q := range quotes {
+		acct.Latest[q.Ticker] = q.LatestPrice
+	}
 
-func (s sortableList) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+	return acct, nil
+}
+
+//-------------------------------------
+//
+// Info API
+//
+//-------------------------------------
+
+// Info returns info about a given company
+func (s *Stocktopus) Info(ticker string) (*types.Company, error) {
+	info, err := s.StockInterface.Company(ticker)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get company info: %w", err)
+	}
+
+	return info, nil
+}
+
+// News returns the headlines for a given company
+func (s *Stocktopus) News(ticker string) ([]string, error) {
+	news, err := s.StockInterface.News(ticker)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get news: %w", err)
+	}
+
+	return news, nil
+}
+
+// Stats returns company statistics
+func (s *Stocktopus) Stats(ticker string) (*types.Stats, error) {
+	stats, err := s.StockInterface.Stats(ticker)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get stats: %w", err)
+	}
+
+	return stats, nil
+}
+
+//-------------------------------------
+//
+// Helper funtions
+//
+//-------------------------------------
+
+func (s *Stocktopus) account(ctx context.Context, key string) (*Account, error) {
+	serialized, err := s.KVStore.Get(ctx, key).Result()
+	if err != nil {
+		if errors.Is(err, redis.Nil) { // If no key found return fresh account
+			return &Account{
+				Holdings: map[string]Holding{},
+			}, nil
+		}
+		return nil, fmt.Errorf("Unable to load account: %w", err)
+	}
+
+	// Deserialize into struct
+	acct := &Account{}
+	if err := json.Unmarshal([]byte(serialized), acct); err != nil {
+		return nil, fmt.Errorf("Unable to parse account: %w", err)
+	}
+
+	return acct, nil
+}
+
+func (s *Stocktopus) saveAccount(ctx context.Context, key string, acct *Account) error {
+	b, err := json.Marshal(acct)
+	if err != nil {
+		return fmt.Errorf("Failed to serialize account: %w", err)
+	}
+
+	if _, err := s.KVStore.Set(ctx, key, b, 0).Result(); err != nil {
+		return fmt.Errorf("Failed to save account: %w", err)
+	}
+
+	return nil
+}
+
+// GetQuotes returns a list of quotes from tickers
+func (s *Stocktopus) GetQuotes(tickers []string) (WatchList, error) {
+	quotes, err := s.StockInterface.BatchQuotes(tickers)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sort the list
+	sort.Sort(WatchList(quotes))
+
+	return WatchList(quotes), nil
+}
+
+func (s *Stocktopus) getChartLink(ticker string) string {
+	symbol := strings.ToUpper(ticker)
+	return fmt.Sprintf("http://finviz.com/chart.ashx?t=%s&ty=c&ta=1&p=d&s=l", symbol)
+}
