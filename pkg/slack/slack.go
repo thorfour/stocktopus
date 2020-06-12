@@ -202,6 +202,8 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 			return nil, err
 		}
 
+		// TODO get chart link
+
 		return &Response{
 			ResponseType: inchannel,
 			Text:         fmt.Sprintf("```%v```", a.String()),

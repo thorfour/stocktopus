@@ -19,11 +19,11 @@ type fakeLookup struct {
 	fakeNews    []string
 }
 
-func (f *fakeLookup) Price(string) (float64, error)                { return 1.00, nil }
-func (f *fakeLookup) BatchQuotes([]string) ([]*stock.Quote, error) { return f.fakeQuotes, nil }
-func (f *fakeLookup) News(string) ([]string, error)                { return f.fakeNews, nil }
-func (f *fakeLookup) Stats(string) (*types.Stats, error)           { return f.fakeStats, nil }
-func (f *fakeLookup) Company(string) (*types.Company, error)       { return f.fakeCompany, nil }
+func (f *fakeLookup) Price(string) (float64, error)                  { return 1.00, nil }
+func (f *fakeLookup) BatchQuotes(q []string) ([]*stock.Quote, error) { return f.fakeQuotes, nil }
+func (f *fakeLookup) News(string) ([]string, error)                  { return f.fakeNews, nil }
+func (f *fakeLookup) Stats(string) (*types.Stats, error)             { return f.fakeStats, nil }
+func (f *fakeLookup) Company(string) (*types.Company, error)         { return f.fakeCompany, nil }
 
 func TestAccount(t *testing.T) {
 
@@ -175,6 +175,14 @@ func TestWatchList(t *testing.T) {
 	require.Equal(t, exp, wl.String())
 
 	require.NoError(t, s.Remove(ctx, []string{"AMD"}, "mykey"))
+	s.StockInterface.(*fakeLookup).fakeQuotes = []*stock.Quote{
+		{
+			Ticker:        "TSLA",
+			LatestPrice:   8.00,
+			Change:        0,
+			ChangePercent: 0,
+		},
+	}
 	wl, err = s.Print(ctx, "mykey")
 	require.NoError(t, err)
 	require.Equal(t, WatchList{
