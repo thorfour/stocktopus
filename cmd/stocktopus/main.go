@@ -48,14 +48,6 @@ func main() {
 		log.Printf("Storing certs in %s", *certCache)
 	}
 
-	r := mux.NewRouter()
-	r.Handle("/metrics", promhttp.Handler()) // start prometheus endpoint
-
-	run(*port, tlsOff, *certCache, r)
-}
-
-func run(p int, tlsOff bool, certDir string, router *mux.Router) {
-
 	s := slack.New(redis.NewClient(&redis.Options{
 		Addr:     redisAddr,
 		Password: redisPW,
@@ -63,25 +55,27 @@ func run(p int, tlsOff bool, certDir string, router *mux.Router) {
 		&stock.IexWrapper{},
 	)
 
+	router := mux.NewRouter()
 	router.HandleFunc("/v1", s.Handler)
 	router.HandleFunc("/auth", auth.Dummy(clientID, clientSecret))
+	router.Handle("/metrics", promhttp.Handler()) // start prometheus endpoint
 
-	if tlsOff { // no TLS
+	switch tlsOff {
+	case true:
 
-		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", p), router))
+		log.Fatal(http.ListenAndServe(fmt.Sprintf(":%v", *port), router))
 
-	} else {
-
+	default:
 		m := &autocert.Manager{
 			Prompt:     autocert.AcceptTOS,
 			HostPolicy: autocert.HostWhitelist(*allowedHost),
-			Cache:      autocert.DirCache(certDir),
+			Cache:      autocert.DirCache(*certCache),
 			Email:      *supportEmail,
 		}
 
 		srv := &http.Server{
 			Handler:   router,
-			Addr:      fmt.Sprintf(":%v", p),
+			Addr:      fmt.Sprintf(":%v", *port),
 			TLSConfig: m.TLSConfig(),
 		}
 		go http.ListenAndServe(":80", m.HTTPHandler(nil))

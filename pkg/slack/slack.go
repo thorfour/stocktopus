@@ -105,6 +105,7 @@ func (s *SlashServer) Process(ctx context.Context, args url.Values) (string, err
 }
 
 // TODO determine ephermeralness of response
+// TODO some of these need to be wrapped with ```
 func (s *SlashServer) newResponse(resp http.ResponseWriter, message string, err error) {
 	r := &response{
 		ResponseType: inchannel,
@@ -130,6 +131,7 @@ func (s *SlashServer) newResponse(resp http.ResponseWriter, message string, err 
 
 // Command processes a stocktopus command
 func (s *SlashServer) Command(ctx context.Context, cmd string, args []string, info map[string][]string) (string, error) {
+
 	defer s.measureTime(time.Now(), cmd)
 
 	switch cmd {
