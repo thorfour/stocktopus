@@ -14,7 +14,7 @@ import (
 	"github.com/thorfour/stocktopus/pkg/stocktopus"
 )
 
-// fakeLookup implementes the stock.Lookup interface
+// fakeLookup implements the stock.Lookup interface
 type fakeLookup struct {
 	fakeQuotes  []*stock.Quote
 	fakeCompany *types.Company
