@@ -42,8 +42,8 @@ const (
 	inchannel = "in_channel"
 )
 
-// response is the json struct for a slack response
-type response struct {
+// Response is the json struct for a slack response
+type Response struct {
 	ResponseType string `json:"response_type"`
 	Text         string `json:"text"`
 }
@@ -90,47 +90,26 @@ func (s *SlashServer) Handler(resp http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	s.newResponse(resp, msg, nil)
-}
-
-// Process a slack request
-func (s *SlashServer) Process(ctx context.Context, args url.Values) (string, error) {
-	text, ok := args["text"]
-	if !ok {
-		return "", errors.New("Bad request")
-	}
-
-	text = strings.Split(strings.ToUpper(text[0]), " ")
-	return s.Command(ctx, text[0], text[1:], args)
-}
-
-// TODO determine ephermeralness of response
-// TODO some of these need to be wrapped with ```
-func (s *SlashServer) newResponse(resp http.ResponseWriter, message string, err error) {
-	r := &response{
-		ResponseType: inchannel,
-		Text:         message,
-	}
-
-	// Switch to an ephemeral message
-	if err != nil {
-		r.ResponseType = ephemeral
-		r.Text = err.Error()
-	}
-
-	b, err := json.Marshal(r)
-	if err != nil {
+	resp.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(resp).Encode(msg); err != nil {
 		http.Error(resp, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
 
-	resp.Header().Set("Content-Type", "application/json")
-	resp.Write(b)
-	return
+// Process a slack request
+func (s *SlashServer) Process(ctx context.Context, args url.Values) (*Response, error) {
+	text, ok := args["text"]
+	if !ok {
+		return nil, errors.New("Bad request")
+	}
+
+	text = strings.Split(strings.ToUpper(text[0]), " ")
+	return s.command(ctx, text[0], text[1:], args)
 }
 
 // Command processes a stocktopus command
-func (s *SlashServer) Command(ctx context.Context, cmd string, args []string, info map[string][]string) (string, error) {
+func (s *SlashServer) command(ctx context.Context, cmd string, args []string, info map[string][]string) (*Response, error) {
 
 	defer s.measureTime(time.Now(), cmd)
 
