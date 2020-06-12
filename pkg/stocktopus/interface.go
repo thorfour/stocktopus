@@ -7,14 +7,6 @@ import (
 	"github.com/thorfour/stocktopus/pkg/stock"
 )
 
-// WatchListAPI is the interface for interacting with a watch list
-type WatchListAPI interface {
-	Add(tickers []string, key string) error
-	Print(key string) (string, error)
-	Remove(tickers []string, key string) error
-	Clear(key string) error
-}
-
 // WatchList is a sort wrapper around a slice of stock quotes
 // they are sorted by percent change
 type WatchList []*stock.Quote
