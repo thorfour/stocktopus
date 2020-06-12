@@ -129,8 +129,6 @@ func (s *SlashServer) Process(ctx context.Context, args url.Values) (*Response, 
 func (s *SlashServer) command(ctx context.Context, cmd string, args []string, info map[string][]string) (*Response, error) {
 	defer s.measureTime(time.Now(), cmd)
 
-	//TODO hedge against not enough args
-
 	switch cmd {
 	case buy:
 		if len(args) != 2 {
