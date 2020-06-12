@@ -125,7 +125,7 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		}
 
 		if _, err := s.s.Buy(ctx, args[0], uint64(shares), acctKey(info)); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Buy failed: %w", err)
 		}
 
 		return &Response{
@@ -140,7 +140,7 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		}
 
 		if _, err := s.s.Sell(ctx, args[0], uint64(shares), acctKey(info)); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Sell failed: %w", err)
 		}
 
 		return &Response{
@@ -156,7 +156,7 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 
 		a, err := s.s.Deposit(ctx, float64(amount), acctKey(info))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Deposit failed: %w", err)
 		}
 
 		return &Response{
@@ -167,12 +167,12 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 	case portfolio:
 		a, err := s.s.Portfolio(ctx, acctKey(info))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Portfolio failed: %w", err)
 		}
 
 		a, err = s.s.Latest(ctx, a)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Latest failed: %w", err)
 		}
 
 		return &Response{
@@ -182,7 +182,7 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 
 	case reset:
 		if err := s.s.Clear(ctx, acctKey(info)); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Clear failed: %w", err)
 		}
 
 		return &Response{
@@ -192,7 +192,7 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 
 	case addToList:
 		if err := s.s.Add(ctx, args, listkey(args, info)); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Add failed: %w", err)
 		}
 
 		return &Response{
@@ -203,7 +203,7 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 	case printList:
 		a, err := s.s.Print(ctx, listkey(args, info))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Print failed: %w", err)
 		}
 
 		// TODO get chart link
@@ -215,6 +215,7 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 
 	case removeFromList:
 		if err := s.s.Remove(ctx, args, listkey(args, info)); err != nil {
+			return nil, fmt.Errorf("Remove failed: %w", err)
 		}
 
 		return &Response{
@@ -223,7 +224,7 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		}, nil
 	case clear:
 		if err := s.s.Clear(ctx, listkey(args, info)); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Clear failed: %w", err)
 		}
 
 		return &Response{
@@ -234,7 +235,7 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 	case infoCmd:
 		c, err := s.s.Info(args[0])
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Info failed: %w", err)
 		}
 
 		return &Response{
@@ -245,7 +246,7 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 	case news:
 		news, err := s.s.News(args[0])
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("News failed: %w", err)
 		}
 
 		return &Response{
@@ -256,7 +257,7 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 	case stats:
 		stats, err := s.s.Stats(args[0])
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("Stats failed: %w", err)
 		}
 
 		// TODO filter stats?
@@ -269,7 +270,7 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 	default:
 		wl, err := s.s.GetQuotes(args)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("GetQuotes failed: %w", err)
 		}
 
 		return &Response{
