@@ -177,7 +177,7 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 
 		return &Response{
 			ResponseType: inchannel,
-			Text:         fmt.Sprintf("```%v```", a.String()),
+			Text:         fmt.Sprintf("```%s```", a),
 		}, nil
 
 	case reset:
@@ -210,7 +210,7 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 
 		return &Response{
 			ResponseType: inchannel,
-			Text:         fmt.Sprintf("```%v```", a.String()),
+			Text:         fmt.Sprintf("```%s```", a),
 		}, nil
 
 	case removeFromList:
@@ -264,7 +264,7 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 
 		return &Response{
 			ResponseType: inchannel,
-			Text:         fmt.Sprintf("```%v```", stocktopus.Stats(stats)),
+			Text:         fmt.Sprintf("```%s```", stocktopus.Stats(stats)),
 		}, nil
 
 	default:
@@ -275,7 +275,7 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 
 		return &Response{
 			ResponseType: inchannel,
-			Text:         fmt.Sprintf("```%v```", wl.String()),
+			Text:         fmt.Sprintf("```%s```", wl),
 		}, nil
 	}
 }
