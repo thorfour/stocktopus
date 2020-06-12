@@ -117,10 +117,15 @@ func (s *Stocktopus) Deposit(ctx context.Context, amount float64, key string) (*
 // Buy shares for play money portfolio
 func (s *Stocktopus) Buy(ctx context.Context, ticker string, shares uint64, key string) (*Account, error) {
 
-	price, err := s.StockInterface.Price(ticker)
+	quote, err := s.StockInterface.BatchQuotes([]string{ticker})
 	if err != nil {
 		return nil, fmt.Errorf("quote failed: %w", err)
 	}
+	if len(quote) == 0 {
+		return nil, fmt.Errorf("quote: no info returned")
+	}
+
+	price := quote[0].LatestPrice
 
 	acct, err := s.account(ctx, key)
 	if err != nil {
@@ -190,6 +195,10 @@ func (s *Stocktopus) Portfolio(ctx context.Context, key string) (*Account, error
 
 // Latest populates the Latest map in the account (it is not saved)
 func (s *Stocktopus) Latest(ctx context.Context, acct *Account) (*Account, error) {
+	if len(acct.Holdings) == 0 {
+		return acct, nil
+	}
+
 	tickers := make([]string, 0, len(acct.Holdings))
 	for ticker := range acct.Holdings {
 		tickers = append(tickers, ticker)
