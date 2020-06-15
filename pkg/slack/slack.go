@@ -95,7 +95,7 @@ func (s *SlashServer) Handler(resp http.ResponseWriter, req *http.Request) {
 	if err != nil {
 		msg = &Response{
 			ResponseType: ephemeral,
-			Text:         err.Error(),
+			Text:         errors.Unwrap(err).Error(),
 		}
 	}
 
