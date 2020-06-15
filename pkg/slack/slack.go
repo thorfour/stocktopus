@@ -24,6 +24,27 @@ var (
 	ErrNumArgs = fmt.Errorf("Incorrect number of args")
 )
 
+const (
+	helpStr = `*ticker* Displays the latest news for a company
+*[tickers...]*       pull stock quotes for list of tickers
+
+*list (list)*        print out personal watch list
+*watch (list) [tickers...]* add tickers to personal watch list
+*unwatch (list) [tickers...]*   remove single ticker from watch list
+*clear*  remove entire watch list
+
+*deposit [amount]* deposit amount of play money into account
+*sell [ticker] [shares]* Sells number of shares of specified security
+*buy [ticker] [shares]* Purchases number of shares in a security with play money
+*reset resets account
+*portfolio* Prints current portfolio of play money
+
+*stats ticker* print statistics about a company
+*info [ticker]* print a company profile
+
+*help* print this list`
+)
+
 // Supported commands
 const (
 	addToList      = "WATCH"
@@ -307,6 +328,12 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 		return &Response{
 			ResponseType: inchannel,
 			Text:         fmt.Sprintf("```%s```", stocktopus.Stats(stats)),
+		}, nil
+
+	case help:
+		return &Response{
+			ResponseType: ephemeral,
+			Text:         helpStr,
 		}, nil
 
 	default:
