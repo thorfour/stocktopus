@@ -345,6 +345,15 @@ func (s *SlashServer) command(ctx context.Context, cmd string, args []string, in
 			return nil, fmt.Errorf("GetQuotes failed: %w", err)
 		}
 
+		// Return quote with chart link it only a single ticker was returned
+		if len(wl) == 1 {
+			chartlink := s.s.GetChartLink(wl[0].Ticker)
+			return &Response{
+				ResponseType: inchannel,
+				Text:         fmt.Sprintf("```%s```\n%s", wl, chartlink),
+			}, nil
+		}
+
 		return &Response{
 			ResponseType: inchannel,
 			Text:         fmt.Sprintf("```%s```", wl),

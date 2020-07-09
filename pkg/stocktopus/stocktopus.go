@@ -310,7 +310,8 @@ func (s *Stocktopus) GetQuotes(tickers []string) (WatchList, error) {
 	return WatchList(quotes), nil
 }
 
-func (s *Stocktopus) getChartLink(ticker string) string {
+// GetChartLink returns a chart link for a given ticker
+func (s *Stocktopus) GetChartLink(ticker string) string {
 	symbol := strings.ToUpper(ticker)
 	return fmt.Sprintf("http://finviz.com/chart.ashx?t=%s&ty=c&ta=1&p=d&s=l", symbol)
 }
